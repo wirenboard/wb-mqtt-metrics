@@ -1,0 +1,20 @@
+Source: wb-mqtt-metrics
+Section: local
+Priority: optional
+Maintainer: Semen Sokolov <s.sokolov@wirenboard.ru>
+Build-Depends: debhelper (>= 10), dh-python, python3-all, python3-setuptools, pkg-config
+Standards-Version: 4.5.0
+Homepage: http://www.debian.org
+X-Python3-Version: >= 3.2
+
+Package: python3-wb-mqtt-metrics
+Section: python
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: metrics_sender - python3 library.
+
+Package: wb-mqtt-metrics
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${python3:Depends}, python3-wb-mqtt-metrics (= ${binary:Version})
+Description: metrics_sender.

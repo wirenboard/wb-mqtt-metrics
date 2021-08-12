@@ -1,0 +1,6 @@
+wb-mqtt-metrics (0~2108121016-1) UNRELEASED; urgency=low
+
+  * Initial release. Closes: #nnnn
+    <nnnn is the bug number of your ITP>
+
+ -- Semen Sokolov <s.sokolov@wirenboard.ru>  Thu, 12 Aug 2021 13:16:55 +0300
