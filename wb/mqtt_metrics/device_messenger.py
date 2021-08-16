@@ -13,17 +13,16 @@ class DeviceMessenger:
     def publish(self, topic, value):
         self.client.publish(topic, value, retain=True, qos=1)
 
-    def create(self, metric_name, type, units='', min=0, max=1000000000000):
+    def create(self, metric_name, type, units='', min=0, max=None):
         self.publish('/devices/{0}/controls/{1}/meta/type'.format(self.device_name, metric_name), type)
 
         if type == 'value':
             self.publish('/devices/{0}/controls/{1}/meta/units'.format(self.device_name, metric_name), units)
 
         if type == 'value' or type == 'range':
-            self.publish('/devices/{0}/controls/{1}/meta/max'.format(self.device_name, metric_name), max)
+            if max:
+                self.publish('/devices/{0}/controls/{1}/meta/max'.format(self.device_name, metric_name), max)
             self.publish('/devices/{0}/controls/{1}/meta/min'.format(self.device_name, metric_name), min)
-
-        # self.publish(f'/devices/{self.device_name}/controls/{metric_name}', '0')
 
     def send(self, metric_name, value):
         self.publish('/devices/{0}/controls/{1}'.format(self.device_name, metric_name), value)

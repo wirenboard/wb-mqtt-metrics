@@ -1,61 +1,64 @@
+import random
 import time
 from threading import Thread
-from wb.mqtt_metrics.metrics_dict import METRICS
-from wb.mqtt_metrics.device_messenger import DeviceMessenger
+from .metrics_dict import METRICS
+from .device_messenger import DeviceMessenger
 import sys
+import yaml
+from yaml.loader import SafeLoader
+import argparse
 
 from paho.mqtt import client as mqtt_client
 
-# BROKER = '192.168.42.1'
-BROKER = '192.168.43.173'
-PORT = 1883
-DEVICE_NAME = 'metrics'
 metrics = []
 
 
-def connect_mqtt() -> mqtt_client:
+def connect_mqtt(broker, port, device_name) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
-            create_device(client)
+            create_device(client, device_name)
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    client = mqtt_client.Client('python-mqtt-wb-255')
+    client_id = random.randint(0, 255)
+    client = mqtt_client.Client('python-mqtt-wb-{0}'.format(client_id))
     client.on_connect = on_connect
-    client.connect(BROKER, PORT)
+    client.connect(broker, port)
     return client
 
 
-def create_device(client: mqtt_client):
-    d = DeviceMessenger(client=client, device_name=DEVICE_NAME)
+def create_device(client: mqtt_client, device_name):
+    d = DeviceMessenger(client=client, device_name=device_name)
 
     for metric in METRICS:
         metrics.append(metric(d))
 
 
-def thread2_loop():
+def thread2_loop(period):
     while True:
         for metric in metrics:
             metric.send()
-        time.sleep(10)
+        time.sleep(period)
 
 
-def subscribe(client: mqtt_client):
-    def on_message(client, userdata, msg):
-        print("Received `{0}` from `{1}` topic".format(msg.payload.decode(), msg.topic))
+def main(argv=sys.argv):
+    parser = argparse.ArgumentParser(description='The tool to send metrics')
 
-        if msg.topic == '/devices/{0}/meta/name'.format(DEVICE_NAME):
-            thread = Thread(target=thread2_loop, args=())
-            thread.start()
+    parser.add_argument('-c', '--config', action='store', help='get data from config')
 
-    client.subscribe('/devices/{0}/#'.format(DEVICE_NAME))
-    client.on_message = on_message
+    args = parser.parse_args(argv[1:])
 
+    with open(args.config) as f:
+        data = yaml.load(f, Loader=SafeLoader)
+        broker = data['broker']
+        port = data['port']
+        period = data['period']
+        device_name = data['device-name']
 
-def main():
-    client = connect_mqtt()
-    subscribe(client)
+    client = connect_mqtt(broker, port, device_name)
+    thread = Thread(target=thread2_loop, args=(period, ))
+    thread.start()
     client.loop_forever()
 
 

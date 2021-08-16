@@ -1,3 +1,3 @@
-from wb.mqtt_metrics.metrics import *
+from .metrics import *
 
 METRICS = {LoadAverage, FreeRam}

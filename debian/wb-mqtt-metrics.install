@@ -1,1 +1,2 @@
 wb-metrics /usr/bin
+wb-mqtt-metrics.conf /etc

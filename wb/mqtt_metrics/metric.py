@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from wb.mqtt_metrics.device_messenger import DeviceMessenger
+from .device_messenger import DeviceMessenger
 
 
 class Metric(metaclass=ABCMeta):

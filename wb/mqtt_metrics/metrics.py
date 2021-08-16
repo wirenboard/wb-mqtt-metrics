@@ -1,5 +1,5 @@
 import subprocess
-from wb.mqtt_metrics.metric import Metric
+from .metric import Metric
 
 
 def get_ram_data():
@@ -27,9 +27,10 @@ class LoadAverage(Metric):
         self.device_messenger.create('load_average_15min', 'value', 'tasks')
 
     def send(self):
-        self.device_messenger.send('load_average_1min', get_load_averages()[0])
-        self.device_messenger.send('load_average_5min', get_load_averages()[1])
-        self.device_messenger.send('load_average_15min', get_load_averages()[2])
+        load_averages = get_load_averages()
+        self.device_messenger.send('load_average_1min', load_averages[0])
+        self.device_messenger.send('load_average_5min', load_averages[1])
+        self.device_messenger.send('load_average_15min', load_averages[2])
 
 
 class FreeRam(Metric):
