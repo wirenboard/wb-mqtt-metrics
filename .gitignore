@@ -6,19 +6,7 @@
 *.deb
 *.pyc
 
-debian/10
-debian/wb-metrics-module
-debian/python3-wb-metrics-module
+debian/*
 .pybuild
 
-
-debian/*/
-debian/debhelper-build-stamp
-debian/.debhelper/
-debian/watch
-debian/*.Debian
-debian/*.new
-debian/*.debhelper.log
-debian/*.substvars
-debian/*.debhelper
-debian/files
+venv
