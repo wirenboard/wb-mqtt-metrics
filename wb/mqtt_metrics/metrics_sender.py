@@ -13,7 +13,7 @@ from paho.mqtt import client as mqtt_client
 metrics = []
 
 
-def connect_mqtt(broker, port, device_name, metrics_list) -> mqtt_client:
+def connect_mqtt(broker, port) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
@@ -55,7 +55,7 @@ def main(argv=sys.argv):
 
         metrics_list = data['metrics']['list']
 
-    client = connect_mqtt(broker, port, device_name, metrics_list)
+    client = connect_mqtt(broker, port)
     d = DeviceMessenger(client=client, device_name=device_name)
 
     create_device(metrics_list, d)
