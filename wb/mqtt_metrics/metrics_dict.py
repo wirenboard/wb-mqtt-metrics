@@ -1,3 +1,4 @@
 from .metrics import *
 
-METRICS = {LoadAverage, FreeRam}
+METRICS = {'LoadAverage': LoadAverage,
+           'FreeRam': FreeRam}

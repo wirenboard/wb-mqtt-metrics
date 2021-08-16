@@ -4,14 +4,14 @@ Priority: optional
 Maintainer: Semen Sokolov <s.sokolov@wirenboard.ru>
 Build-Depends: debhelper (>= 10), dh-python, python3-all, python3-setuptools, pkg-config
 Standards-Version: 4.5.0
-Homepage: http://www.debian.org
+Homepage: https://github.com/wirenboard/wb-mqtt-metrics/
 X-Python3-Version: >= 3.2
 
 Package: python3-wb-mqtt-metrics
 Section: python
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
-Description: python3 library for sending metrics to mqqt-channels
+Depends: ${python3:Depends}, ${misc:Depends}, python3-yaml, python3-paho-mqtt
+Description: python3 library for sending metrics to mqtt-channels
 
 Package: wb-mqtt-metrics
 Architecture: all

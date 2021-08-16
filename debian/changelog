@@ -1,4 +1,4 @@
-wb-mqtt-metrics (0~2108121016-1) 0.1; urgency=low
+wb-mqtt-metrics (0.1) UNRELEASED; urgency=low
 
   * Initial release. Ticket #38032
 

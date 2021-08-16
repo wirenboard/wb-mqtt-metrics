@@ -5,13 +5,12 @@ from .device_messenger import DeviceMessenger
 class Metric(metaclass=ABCMeta):
 
     def __init__(self, device_messenger: DeviceMessenger):
-        self.device_messenger = device_messenger
-        self.create()
+        self.create(device_messenger)
 
     @abstractmethod
-    def send(self):
+    def send(self, device_messenger: DeviceMessenger):
         pass
 
     @abstractmethod
-    def create(self):
+    def create(self, device_messenger: DeviceMessenger):
         pass

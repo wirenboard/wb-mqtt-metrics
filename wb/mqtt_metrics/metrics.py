@@ -21,24 +21,24 @@ def get_load_averages():
 
 
 class LoadAverage(Metric):
-    def create(self):
-        self.device_messenger.create('load_average_1min', 'value', 'tasks')
-        self.device_messenger.create('load_average_5min', 'value', 'tasks')
-        self.device_messenger.create('load_average_15min', 'value', 'tasks')
+    def create(self, device_messenger):
+        device_messenger.create('load_average_1min', 'value', 'tasks')
+        device_messenger.create('load_average_5min', 'value', 'tasks')
+        device_messenger.create('load_average_15min', 'value', 'tasks')
 
-    def send(self):
+    def send(self, device_messenger):
         load_averages = get_load_averages()
-        self.device_messenger.send('load_average_1min', load_averages[0])
-        self.device_messenger.send('load_average_5min', load_averages[1])
-        self.device_messenger.send('load_average_15min', load_averages[2])
+        device_messenger.send('load_average_1min', load_averages[0])
+        device_messenger.send('load_average_5min', load_averages[1])
+        device_messenger.send('load_average_15min', load_averages[2])
 
 
 class FreeRam(Metric):
-    def create(self):
-        self.device_messenger.create('free_ram', 'value', 'MB')
-        self.device_messenger.create('total_ram', 'value', 'MB')
-        self.device_messenger.send('total_ram', get_ram_data()[0])
+    def create(self, device_messenger):
+        device_messenger.create('free_ram', 'value', 'MB')
+        device_messenger.create('total_ram', 'value', 'MB')
+        device_messenger.send('total_ram', get_ram_data()[0])
 
-    def send(self):
-        self.device_messenger.send('free_ram', get_ram_data()[2])
+    def send(self, device_messenger):
+        device_messenger.send('free_ram', get_ram_data()[2])
 
