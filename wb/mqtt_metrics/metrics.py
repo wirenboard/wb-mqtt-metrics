@@ -20,23 +20,14 @@ def get_load_averages():
     return [float(x.replace(',', '.')) for x in load_averages]
 
 
-def get_df_dev_root():
-    p = subprocess.Popen('df | grep /dev/root', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+def get_df(cluster):
+    p = subprocess.Popen('df -m | grep {0}'.format(cluster), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     cmd_res = p.stdout.readlines()[0].decode()
     df_def_root_data = cmd_res.split()
     mounted_on = df_def_root_data[5]
     used = df_def_root_data[2]
     total = df_def_root_data[1]
     return [mounted_on, used, total]
-
-
-def get_df_dev_mmcblk0p6():
-    p = subprocess.Popen('df | grep /dev/mmcblk0p6', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    cmd_res = p.stdout.readlines()[0].decode()
-    df_dev_mmcblk0p6_data = cmd_res.split()
-    used = df_dev_mmcblk0p6_data[2]
-    total = df_dev_mmcblk0p6_data[1]
-    return [used, total]
 
 
 class LoadAverage(Metric):
@@ -54,8 +45,8 @@ class LoadAverage(Metric):
 
 class FreeRam(Metric):
     def create(self, device_messenger):
-        device_messenger.create('free_ram', 'value', 'MB')
-        device_messenger.create('total_ram', 'value', 'MB')
+        device_messenger.create('free_ram', 'value', 'MiB')
+        device_messenger.create('total_ram', 'value', 'MiB')
         device_messenger.send('total_ram', get_ram_data()[0])
 
     def send(self, device_messenger):
@@ -64,22 +55,23 @@ class FreeRam(Metric):
 
 class DevRoot(Metric):
     def create(self, device_messenger):
-        device_messenger.create('dev_root_used_space', 'value', 'KB')
-        device_messenger.create('dev_root_total_space', 'value', 'KB')
+        device_messenger.create('dev_root_used_space', 'value', 'MiB')
+        device_messenger.create('dev_root_total_space', 'value', 'MiB')
         device_messenger.create('dev_root_mounted_on', 'text')
-        device_messenger.send('dev_root_mounted_on', get_df_dev_root()[0])
-        device_messenger.send('dev_root_total_space', get_df_dev_root()[2])
+        df_dev_root = get_df('/dev/root')
+        device_messenger.send('dev_root_mounted_on', df_dev_root[0])
+        device_messenger.send('dev_root_total_space', df_dev_root[2])
 
     def send(self, device_messenger):
-        device_messenger.send('dev_root_used_space', get_df_dev_root()[1])
+        device_messenger.send('dev_root_used_space', get_df('/dev/root')[1])
 
 
-class DevMmcblk0p6(Metric):
+class Data(Metric):
     def create(self, device_messenger):
-        device_messenger.create('dev_mmcblk0p6_used_space', 'value', 'KB')
-        device_messenger.create('dev_mmcblk0p6_total_space', 'value', 'KB')
-        device_messenger.send('dev_mmcblk0p6_total_space', get_df_dev_mmcblk0p6()[1])
+        device_messenger.create('data_used_space', 'value', 'MiB')
+        device_messenger.create('data_total_space', 'value', 'MiB')
+        device_messenger.send('data_total_space', get_df('/dev/mmcblk0p6')[2])
 
     def send(self, device_messenger):
-        device_messenger.send('dev_mmcblk0p6_used_space', get_df_dev_mmcblk0p6()[0])
+        device_messenger.send('data_used_space', get_df('/dev/mmcblk0p6')[1])
 
