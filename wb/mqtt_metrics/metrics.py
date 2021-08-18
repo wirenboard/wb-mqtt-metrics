@@ -45,12 +45,12 @@ class LoadAverage(Metric):
 
 class FreeRam(Metric):
     def create(self, device_messenger):
-        device_messenger.create('free_ram', 'value', 'MiB')
-        device_messenger.create('total_ram', 'value', 'MiB')
-        device_messenger.send('total_ram', get_ram_data()[0])
+        device_messenger.create('ram_free', 'value', 'MiB')
+        device_messenger.create('ram_total', 'value', 'MiB')
+        device_messenger.send('ram_total', get_ram_data()[0])
 
     def send(self, device_messenger):
-        device_messenger.send('free_ram', get_ram_data()[2])
+        device_messenger.send('ram_free', get_ram_data()[2])
 
 
 class DevRoot(Metric):
