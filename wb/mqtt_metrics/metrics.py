@@ -4,10 +4,20 @@ from .metric import Metric
 
 def get_ram_data():
     p = subprocess.Popen('free -m', shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    cmd_res = p.stdout.readlines()[1].decode()
+    cmd_res = p.stdout.readlines()
+
     keyword = "Mem:"
-    memory_data = cmd_res[cmd_res.find(keyword) + len(keyword):].split()
-    return [int(x) for x in memory_data]
+    memory_data = cmd_res[1].decode()
+    memory_data = [int(x) for x in memory_data[memory_data.find(keyword) + len(keyword):].split()]
+    output = {'ram_total': memory_data[0], 'ram_used': memory_data[1], 'ram_available': memory_data[5]}
+
+    keyword = "Swap:"
+    memory_data = cmd_res[2].decode()
+    memory_data = [int(x) for x in memory_data[memory_data.find(keyword) + len(keyword):].split()]
+    output['swap_total'] = memory_data[0]
+    output['swap_used'] = memory_data[1]
+
+    return output
 
 
 def get_load_averages():
@@ -49,12 +59,20 @@ class LoadAverage(Metric):
 
 class FreeRam(Metric):
     def create(self, device_messenger):
-        device_messenger.create('ram_free', 'value', 'MiB')
+        device_messenger.create('ram_available', 'value', 'MiB')
+        device_messenger.create('ram_used', 'value', 'MiB')
         device_messenger.create('ram_total', 'value', 'MiB')
-        device_messenger.send('ram_total', get_ram_data()[0])
+        device_messenger.create('swap_total', 'value', 'MiB')
+        device_messenger.create('swap_used', 'value', 'MiB')
+        ram_data = get_ram_data()
+        device_messenger.send('ram_total', ram_data['ram_total'])
+        device_messenger.send('swap_total', ram_data['swap_total'])
 
     def send(self, device_messenger):
-        device_messenger.send('ram_free', get_ram_data()[2])
+        ram_data = get_ram_data()
+        device_messenger.send('ram_available', ram_data['ram_available'])
+        device_messenger.send('ram_used', ram_data['ram_used'])
+        device_messenger.send('swap_used', ram_data['swap_used'])
 
 
 class DevRoot(Metric):
