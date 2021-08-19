@@ -14,7 +14,8 @@ metrics = []
 
 
 def connect_mqtt(broker, port, device_name, metrics_list, period) -> mqtt_client:
-    thread_info = [None, False]
+    thread_info = {'thread': None,
+                   'must_work': False}
 
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -22,18 +23,17 @@ def connect_mqtt(broker, port, device_name, metrics_list, period) -> mqtt_client
             d = DeviceMessenger(client=client, device_name=device_name)
             create_device(metrics_list, d)
 
-            thread_info[1] = True
-            thread_info[0] = Thread(target=thread2_loop, args=(period, d, thread_info, ))
-            thread_info[0].start()
+            thread_info['must_work'] = True
+            thread_info['thread'] = Thread(target=thread2_loop, args=(period, d, thread_info, ))
+            thread_info['thread'].start()
         else:
             print("Failed to connect, return code %d\n", rc)
 
     def on_disconnect(client, userdata, rc):
         if rc != 0:
             print("Unexpected disconnection.")
-        thread_info[1] = False
-        thread_info[0].join()
-        print(thread_info[1])
+        thread_info['must_work'] = False
+        thread_info['thread'].join()
 
     client_id = random.randint(0, 255)
     client = mqtt_client.Client('python-mqtt-wb-{0}'.format(client_id))
@@ -49,7 +49,7 @@ def create_device(metrics_list, d):
 
 
 def thread2_loop(period, device_messenger: DeviceMessenger, thread_info):
-    while thread_info[1]:
+    while thread_info['must_work']:
         for metric in metrics:
             metric.send(device_messenger)
         time.sleep(period)
