@@ -1,0 +1,5 @@
+wb-mqtt-metrics (0.1) UNRELEASED; urgency=low
+
+  * Initial release. Ticket #38032
+
+ -- Semen Sokolov <s.sokolov@wirenboard.ru>  Thu, 12 Aug 2021 13:16:55 +0300
