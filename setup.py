@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='wb-mqtt-metrics',
-      version='1.0',
+      version='0.1.1',
       description='metrics sender',
       author='Sokolov Semen',
       author_email='s.sokolov@wirenboard.ru',
