@@ -1,3 +1,9 @@
+wb-mqtt-metrics (0.1.1) UNRELEASED; urgency=low
+
+  * fix metric naming
+
+ -- Semen Sokolov <s.sokolov@wirenboard.ru>  Thu, 23 Aug 2021 16:16:55 +0300
+
 wb-mqtt-metrics (0.1) UNRELEASED; urgency=low
 
   * Initial release. Ticket #38032
