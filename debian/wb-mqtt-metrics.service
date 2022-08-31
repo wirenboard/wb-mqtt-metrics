@@ -6,6 +6,7 @@ After=wb-hwconf-manager.service wb-modules.service
 [Service]
 Type=simple
 Restart=on-failure
+RuntimeMaxSec=1h
 RestartSec=1
 User=root
 ExecStart=/usr/bin/wb-metrics -c /etc/wb-mqtt-metrics.conf
