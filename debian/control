@@ -10,7 +10,7 @@ X-Python3-Version: >= 3.2
 Package: python3-wb-mqtt-metrics
 Section: python
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-yaml, python3-paho-mqtt
+Depends: ${python3:Depends}, ${misc:Depends}, python3-yaml, python3-paho-mqtt, python3-paho-socket
 Description: python3 library for sending metrics to mqtt-channels
 
 Package: wb-mqtt-metrics

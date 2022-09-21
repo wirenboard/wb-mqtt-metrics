@@ -1,3 +1,9 @@
+wb-mqtt-metrics (0.2.0) stable; urgency=low
+
+  * Support connection to Mosquitto through unix socket
+
+ -- Petr Krasnoshchekov <petr.krasnoshchekov@wirenboard.ru>  Wed, 21 Sep 2022 11:39:13 +0500
+
 wb-mqtt-metrics (0.1.1) UNRELEASED; urgency=low
 
   * fix metric naming

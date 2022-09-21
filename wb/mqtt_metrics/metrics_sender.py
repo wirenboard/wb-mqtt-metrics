@@ -7,8 +7,10 @@ import sys
 import yaml
 from yaml.loader import SafeLoader
 import argparse
+import urllib.parse
 
 from paho.mqtt import client as mqtt_client
+import paho_socket
 
 metrics = []
 
@@ -35,11 +37,19 @@ def connect_mqtt(broker, port, device_name, metrics_list, period) -> mqtt_client
         thread_info['must_work'] = False
         thread_info['thread'].join()
 
-    client_id = random.randint(0, 255)
-    client = mqtt_client.Client('python-mqtt-wb-{0}'.format(client_id))
-    client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.connect(broker, port)
+    client_id = 'python-mqtt-wb-{0}'.format(random.randint(0, 255))
+    url = urllib.parse.urlparse(broker)
+    if url.scheme == 'unix':
+        client = paho_socket.Client(client_id)
+        client.on_connect = on_connect
+        client.on_disconnect = on_disconnect
+        client.sock_connect(url.path)
+    else:
+        client = mqtt_client.Client(client_id)
+        client.on_connect = on_connect
+        client.on_disconnect = on_disconnect
+        client.connect(broker, port)
+
     return client
 
 
@@ -65,7 +75,10 @@ def main(argv=sys.argv):
     with open(args.config) as f:
         data = yaml.load(f, Loader=SafeLoader)
         broker = data['mqtt']['broker']
-        port = data['mqtt']['port']
+        try:
+            port = data['mqtt']['port']
+        except KeyError:
+            port = 0
         period = data['mqtt']['period']
         device_name = data['mqtt']['device-name']
 
