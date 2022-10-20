@@ -1,7 +1,6 @@
 [Unit]
 Description=metrics sender.
-Wants=wb-hwconf-manager.service wb-modules.service
-After=wb-hwconf-manager.service wb-modules.service
+After=wb-configs.service mosquitto.service
 
 [Service]
 Type=simple
