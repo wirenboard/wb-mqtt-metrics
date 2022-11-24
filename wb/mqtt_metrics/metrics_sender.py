@@ -22,15 +22,15 @@ def connect_mqtt(broker, port, device_name, metrics_list, period) -> mqtt_client
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
-            d = DeviceMessenger(client=client, device_name=device_name)
-            create_device(metrics_list, d)
+            messenger = DeviceMessenger(client=client, device_name=device_name)
+            create_device(metrics_list, messenger)
 
             thread_info["must_work"] = True
             thread_info["thread"] = Thread(
                 target=thread2_loop,
                 args=(
                     period,
-                    d,
+                    messenger,
                     thread_info,
                 ),
             )
@@ -60,26 +60,29 @@ def connect_mqtt(broker, port, device_name, metrics_list, period) -> mqtt_client
     return client
 
 
-def create_device(metrics_list, d):
+def create_device(metrics_list, messenger):
     for metric in metrics_list:
-        metrics.append(METRICS[metric](d))
+        metrics.append(METRICS[metric](messenger))
 
 
-def thread2_loop(period, device_messenger: DeviceMessenger, thread_info):
+def thread2_loop(period, messenger: DeviceMessenger, thread_info):
     while thread_info["must_work"]:
         for metric in metrics:
-            metric.send(device_messenger)
+            metric.send(messenger)
         time.sleep(period)
 
 
-def main(argv=sys.argv):
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+
     parser = argparse.ArgumentParser(description="The tool to send metrics")
 
     parser.add_argument("-c", "--config", action="store", help="get data from config")
 
     args = parser.parse_args(argv[1:])
 
-    with open(args.config) as f:
+    with open(args.config, encoding="utf-8") as f:
         data = yaml.load(f, Loader=SafeLoader)
         broker = data["mqtt"]["broker"]
         try:
