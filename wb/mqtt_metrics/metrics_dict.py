@@ -1,6 +1,3 @@
 from .metrics import *
 
-METRICS = {'LoadAverage': LoadAverage,
-           'FreeRam': FreeRam,
-           'DevRoot': DevRoot,
-           'Data': Data}
+METRICS = {"LoadAverage": LoadAverage, "FreeRam": FreeRam, "DevRoot": DevRoot, "Data": Data}
