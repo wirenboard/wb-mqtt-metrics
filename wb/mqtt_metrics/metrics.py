@@ -1,11 +1,17 @@
+import shutil
 import subprocess
 
 from .metric import Metric
 
+FREE_PATH = shutil.which("free")
+UPTIME_PATH = shutil.which("uptime")
+DF_PATH = shutil.which("df")
+MOUNT_PATH = shutil.which("mount")
+
 
 def get_ram_data():
-    p = subprocess.Popen("free -m", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    cmd_res = p.stdout.readlines()
+    with subprocess.Popen([FREE_PATH, "-m"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
+        cmd_res = proc.stdout.readlines()
 
     keyword = "Mem:"
     memory_data = cmd_res[1].decode()
@@ -22,8 +28,9 @@ def get_ram_data():
 
 
 def get_load_averages():
-    p = subprocess.Popen("uptime", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    cmd_res = p.stdout.readlines()[0].decode()
+    with subprocess.Popen([UPTIME_PATH], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
+        cmd_res = proc.stdout.readlines()[0].decode()
+
     keyword = "load average: "
     load_averages = cmd_res[cmd_res.find(keyword) + len(keyword) :].split()
     load_averages[0] = load_averages[0][:-1]
@@ -31,11 +38,10 @@ def get_load_averages():
     return [float(x.replace(",", ".")) for x in load_averages]
 
 
-def get_df(cluster):
-    p = subprocess.Popen(
-        "df -m | grep {0}".format(cluster), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
-    cmd_res = p.stdout.readlines()[0].decode()
+def get_df(path):
+    with subprocess.Popen([DF_PATH, "-m", path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
+        cmd_res = proc.stdout.readlines()[1].decode()
+
     df_def_root_data = cmd_res.split()
     used = df_def_root_data[2]
     total = df_def_root_data[1]
@@ -43,10 +49,13 @@ def get_df(cluster):
 
 
 def get_dev_root_link():
-    p = subprocess.Popen(
-        "mount|grep ' / '|cut -d' ' -f 1", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
-    return p.stdout.readlines()[0].decode()
+    with subprocess.Popen([MOUNT_PATH], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
+        for line in proc.stdout.readlines():
+            line_str = line.decode()
+            if " on / " in line_str:
+                return line_str.split()[0]
+
+    return "unknown"
 
 
 class LoadAverage(Metric):
@@ -85,19 +94,19 @@ class DevRoot(Metric):
         device_messenger.create("dev_root_used_space", "value", "MiB")
         device_messenger.create("dev_root_total_space", "value", "MiB")
         device_messenger.create("dev_root_linked_on", "text")
-        df_dev_root = get_df("/dev/root")
+        df_dev_root = get_df("/")
         device_messenger.send("dev_root_linked_on", get_dev_root_link())
         device_messenger.send("dev_root_total_space", df_dev_root[1])
 
     def send(self, device_messenger):
-        device_messenger.send("dev_root_used_space", get_df("/dev/root")[0])
+        device_messenger.send("dev_root_used_space", get_df("/")[0])
 
 
 class Data(Metric):
     def create(self, device_messenger):
         device_messenger.create("data_used_space", "value", "MiB")
         device_messenger.create("data_total_space", "value", "MiB")
-        device_messenger.send("data_total_space", get_df("/dev/mmcblk0p6")[1])
+        device_messenger.send("data_total_space", get_df("/mnt/data")[1])
 
     def send(self, device_messenger):
-        device_messenger.send("data_used_space", get_df("/dev/mmcblk0p6")[0])
+        device_messenger.send("data_used_space", get_df("/mnt/data")[0])
