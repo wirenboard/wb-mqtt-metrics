@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
+
 from .device_messenger import DeviceMessenger
 
 
 class Metric(metaclass=ABCMeta):
-
     def __init__(self, device_messenger: DeviceMessenger):
         self.create(device_messenger)
 

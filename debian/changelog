@@ -1,3 +1,11 @@
+wb-mqtt-metrics (0.1.1-wb100) stable; urgency=medium
+
+  * fix codestyle
+  * handle resource allocations properly
+  * do not use shell to call external commands to reduce CPU usage
+
+ -- Nikita Maslov <nikita.maslov@wirenboard.ru>  Wed, 30 Nov 2022 20:24:06 +0600
+
 wb-mqtt-metrics (0.1.1) UNRELEASED; urgency=low
 
   * fix metric naming
