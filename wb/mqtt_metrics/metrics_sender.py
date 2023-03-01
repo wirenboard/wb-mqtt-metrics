@@ -1,41 +1,36 @@
 import argparse
-import random
+import logging
 import sys
 import time
-import urllib.parse
 
-import paho_socket
 import yaml
-from paho.mqtt import client as mqtt_client
+from systemd.journal import JournalHandler
+from wb_common.mqtt_client import MQTTClient
 from yaml.loader import SafeLoader
 
 from .device_messenger import DeviceMessenger
 from .metrics_dict import METRICS
 
+logger = logging.getLogger(__name__)
+logger.addHandler(JournalHandler())
+logger.setLevel(logging.INFO)
 
-def connect_mqtt(broker, port) -> mqtt_client:
+
+def connect_mqtt(broker_url) -> MQTTClient:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
-            print("Connected to MQTT Broker!")
+            logger.info("Connected to MQTT Broker %s!", broker_url)
         else:
-            print("Failed to connect, return code %d\n", rc)
+            logger.error("Failed to connect, return code %d\n", rc)
 
     def on_disconnect(client, userdata, rc):
         if rc != 0:
-            print("Unexpected disconnection.")
+            logger.error("Unexpected disconnection.")
 
-    client_id = "python-mqtt-wb-{0}".format(random.randint(0, 255))
-    url = urllib.parse.urlparse(broker)
-    if url.scheme == "unix":
-        client = paho_socket.Client(client_id)
-        client.on_connect = on_connect
-        client.on_disconnect = on_disconnect
-        client.sock_connect(url.path)
-    else:
-        client = mqtt_client.Client(client_id)
-        client.on_connect = on_connect
-        client.on_disconnect = on_disconnect
-        client.connect(broker, port)
+    client = MQTTClient("wb-mqtt-metrics", broker_url)
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.connect()
 
     return client
 
@@ -52,17 +47,13 @@ def main(argv=None):
 
     with open(args.config, encoding="utf-8") as f:
         data = yaml.load(f, Loader=SafeLoader)
-        broker = data["mqtt"]["broker"]
-        try:
-            port = data["mqtt"]["port"]
-        except KeyError:
-            port = 0
+        broker_url = data["mqtt"]["broker"]
         period = data["mqtt"]["period"]
         device_name = data["mqtt"]["device-name"]
 
         metrics_list = data["metrics"]["list"]
 
-    client = connect_mqtt(broker, port)
+    client = connect_mqtt(broker_url)
     messenger = DeviceMessenger(client=client, device_name=device_name)
 
     metrics = []
@@ -70,14 +61,12 @@ def main(argv=None):
         metrics.append(METRICS[metric](messenger))
 
     try:
-        client.loop_start()
-
         while True:
             for metric in metrics:
                 metric.send(messenger)
             time.sleep(period)
     finally:
-        client.loop_stop()
+        client.disconnect()
 
 
 if __name__ == "__main__":
