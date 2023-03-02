@@ -30,7 +30,7 @@ def connect_mqtt(broker_url) -> MQTTClient:
     client = MQTTClient("wb-mqtt-metrics", broker_url)
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    client.connect()
+    client.start()
 
     return client
 
@@ -66,7 +66,7 @@ def main(argv=None):
                 metric.send(messenger)
             time.sleep(period)
     finally:
-        client.disconnect()
+        client.stop()
 
 
 if __name__ == "__main__":
