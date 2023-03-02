@@ -1,8 +1,8 @@
-from paho.mqtt import client as mqtt_client
+from wb_common.mqtt_client import MQTTClient
 
 
 class DeviceMessenger:
-    def __init__(self, client: mqtt_client, device_name):
+    def __init__(self, client: MQTTClient, device_name: str):
         self.client = client
         self.device_name = device_name
 
