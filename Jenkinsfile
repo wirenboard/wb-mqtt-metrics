@@ -1,1 +1,1 @@
-buildDebSbuild defaultTargets: 'bullseye-host'
+buildDebArchAll defaultRunPythonChecks: true

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+
 from wb.mqtt_metrics.metrics_sender import main
+
 sys.exit(main())
