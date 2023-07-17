@@ -1,8 +1,9 @@
 Source: wb-mqtt-metrics
 Section: local
 Priority: optional
-Maintainer: Semen Sokolov <s.sokolov@wirenboard.ru>
-Build-Depends: debhelper (>= 10), dh-python, python3-all, python3-setuptools, pkg-config
+Maintainer: Wiren Board Team <info@wirenboard.com>
+Build-Depends: debhelper (>= 10), dh-python, python3-all, python3-setuptools, pkg-config,
+               python3-systemd, python3-wb-common (>= 2.1.0)
 Standards-Version: 4.5.0
 Homepage: https://github.com/wirenboard/wb-mqtt-metrics/
 X-Python3-Version: >= 3.5
