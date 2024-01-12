@@ -17,14 +17,14 @@ logger.setLevel(logging.INFO)
 
 
 def connect_mqtt(broker_url) -> MQTTClient:
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
+    def on_connect(_client, _userdata, _flags, return_code):
+        if return_code == 0:
             logger.info("Connected to MQTT Broker %s!", broker_url)
         else:
-            logger.error("Failed to connect, return code %d\n", rc)
+            logger.error("Failed to connect, return code %d\n", return_code)
 
-    def on_disconnect(client, userdata, rc):
-        if rc != 0:
+    def on_disconnect(_client, _userdata, return_code):
+        if return_code != 0:
             logger.error("Unexpected disconnection.")
 
     client = MQTTClient("wb-mqtt-metrics", broker_url)
