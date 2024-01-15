@@ -10,3 +10,7 @@ debian/*
 .pybuild
 
 venv
+
+### direnv ###
+.direnv
+.envrc
