@@ -1,3 +1,10 @@
+wb-mqtt-metrics (0.3.3) stable; urgency=medium
+
+  * Add name of a driver publishing the device
+  * Add device title translation
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Tue, 19 Mar 2024 10:39:00 +0400
+
 wb-mqtt-metrics (0.3.2) stable; urgency=medium
 
   * Fix pylint errors. No functional changes
