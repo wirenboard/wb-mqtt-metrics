@@ -1,3 +1,5 @@
+import json
+
 from wb_common.mqtt_client import MQTTClient
 
 
@@ -6,7 +8,10 @@ class DeviceMessenger:
         self.client = client
         self.device_name = device_name
 
-        client.publish(f"/devices/{self.device_name}/meta/name", self.device_name, retain=True, qos=1)
+        meta = {"driver": "wb-mqtt-metrics", "title": {"en": "Metrics", "ru": "Метрики"}}
+        client.publish(f"/devices/{self.device_name}/meta", json.dumps(meta), retain=True, qos=1)
+        client.publish(f"/devices/{self.device_name}/meta/driver", meta["driver"], retain=True, qos=1)
+        client.publish(f"/devices/{self.device_name}/meta/name", meta["title"]["en"], retain=True, qos=1)
         client.publish(f"/devices/{self.device_name}/meta/error", None, retain=True, qos=1)
 
     def publish(self, topic, value):
