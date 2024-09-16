@@ -1,7 +1,8 @@
 import shutil
 import subprocess
+from abc import ABCMeta, abstractmethod
 
-from .metric import Metric
+from .device_messenger import MqttMessenger
 
 FREE_PATH = shutil.which("free")
 UPTIME_PATH = shutil.which("uptime")
@@ -58,55 +59,68 @@ def get_dev_root_link():
     return "unknown"
 
 
-class LoadAverage(Metric):
-    def create(self, device_messenger):
-        device_messenger.create("load_average_1min", "value", "tasks")
-        device_messenger.create("load_average_5min", "value", "tasks")
-        device_messenger.create("load_average_15min", "value", "tasks")
+class Metric(metaclass=ABCMeta):
+    def __init__(self, messenger: MqttMessenger):
+        self._messenger = messenger
 
-    def send(self, device_messenger):
+    @abstractmethod
+    def send(self):
+        pass
+
+    @abstractmethod
+    def create(self):
+        pass
+
+
+class LoadAverage(Metric):
+    def create(self):
+        self._messenger.create_control("load_average_1min", "value", "tasks")
+        self._messenger.create_control("load_average_5min", "value", "tasks")
+        self._messenger.create_control("load_average_15min", "value", "tasks")
+
+    def send(self):
         load_averages = get_load_averages()
-        device_messenger.send("load_average_1min", load_averages[0])
-        device_messenger.send("load_average_5min", load_averages[1])
-        device_messenger.send("load_average_15min", load_averages[2])
+        self._messenger.send_value("load_average_1min", load_averages[0])
+        self._messenger.send_value("load_average_5min", load_averages[1])
+        self._messenger.send_value("load_average_15min", load_averages[2])
 
 
 class FreeRam(Metric):
-    def create(self, device_messenger):
-        device_messenger.create("ram_available", "value", "MiB")
-        device_messenger.create("ram_used", "value", "MiB")
-        device_messenger.create("ram_total", "value", "MiB")
-        device_messenger.create("swap_total", "value", "MiB")
-        device_messenger.create("swap_used", "value", "MiB")
+    def create(self):
+        self._messenger.create_control("ram_available", "value", "MiB")
+        self._messenger.create_control("ram_used", "value", "MiB")
+        self._messenger.create_control("ram_total", "value", "MiB")
+        self._messenger.create_control("swap_total", "value", "MiB")
+        self._messenger.create_control("swap_used", "value", "MiB")
         ram_data = get_ram_data()
-        device_messenger.send("ram_total", ram_data["ram_total"])
-        device_messenger.send("swap_total", ram_data["swap_total"])
+        self._messenger.send_value("ram_total", ram_data["ram_total"])
+        self._messenger.send_value("swap_total", ram_data["swap_total"])
 
-    def send(self, device_messenger):
+    def send(self):
         ram_data = get_ram_data()
-        device_messenger.send("ram_available", ram_data["ram_available"])
-        device_messenger.send("ram_used", ram_data["ram_used"])
-        device_messenger.send("swap_used", ram_data["swap_used"])
+        self._messenger.send_value("ram_available", ram_data["ram_available"])
+        self._messenger.send_value("ram_used", ram_data["ram_used"])
+        self._messenger.send_value("swap_used", ram_data["swap_used"])
 
 
 class DevRoot(Metric):
-    def create(self, device_messenger):
-        device_messenger.create("dev_root_used_space", "value", "MiB")
-        device_messenger.create("dev_root_total_space", "value", "MiB")
-        device_messenger.create("dev_root_linked_on", "text")
+    def create(self):
+        self._messenger.create_control("dev_root_used_space", "value", "MiB")
+        self._messenger.create_control("dev_root_total_space", "value", "MiB")
+        self._messenger.create_control("dev_root_linked_on", "text")
         df_dev_root = get_df("/")
-        device_messenger.send("dev_root_linked_on", get_dev_root_link())
-        device_messenger.send("dev_root_total_space", df_dev_root[1])
+        self._messenger.send_value("dev_root_linked_on", get_dev_root_link())
+        self._messenger.send_value("dev_root_total_space", df_dev_root[1])
 
-    def send(self, device_messenger):
-        device_messenger.send("dev_root_used_space", get_df("/")[0])
+    def send(self):
+        self._messenger.send_value("dev_root_used_space", get_df("/")[0])
 
 
 class Data(Metric):
-    def create(self, device_messenger):
-        device_messenger.create("data_used_space", "value", "MiB")
-        device_messenger.create("data_total_space", "value", "MiB")
-        device_messenger.send("data_total_space", get_df("/mnt/data")[1])
+    def create(self):
+        self._messenger.create_control("data_used_space", "value", "MiB")
+        self._messenger.create_control("data_total_space", "value", "MiB")
+        self._messenger.send_value("data_total_space", get_df("/mnt/data")[1])
 
-    def send(self, device_messenger):
-        device_messenger.send("data_used_space", get_df("/mnt/data")[0])
+    def send(self):
+        self._messenger.send_value("data_used_space", get_df("/mnt/data")[0])

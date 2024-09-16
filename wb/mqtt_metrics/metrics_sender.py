@@ -8,7 +8,7 @@ from systemd.journal import JournalHandler
 from wb_common.mqtt_client import MQTTClient
 from yaml.loader import SafeLoader
 
-from .device_messenger import DeviceMessenger
+from .device_messenger import MqttMessenger
 from .metrics_dict import METRICS
 
 logger = logging.getLogger(__name__)
@@ -16,23 +16,38 @@ logger.addHandler(JournalHandler())
 logger.setLevel(logging.INFO)
 
 
-def connect_mqtt(broker_url) -> MQTTClient:
-    def on_connect(_client, _userdata, _flags, return_code):
-        if return_code == 0:
-            logger.info("Connected to MQTT Broker %s!", broker_url)
-        else:
-            logger.error("Failed to connect, return code %d\n", return_code)
+class MetricClient:
+    def __init__(self, broker_url, device_name, metrics_list):
+        self._mqtt_client = MQTTClient("wb-mqtt-metrics", broker_url)
+        self._mqtt_client.on_connect = self._on_connect
+        self._mqtt_client.on_disconnect = self._on_disconnect
 
-    def on_disconnect(_client, _userdata, return_code):
-        if return_code != 0:
+        self._messenger = MqttMessenger(client=self._mqtt_client, device_name=device_name)
+        self._metrics = []
+        for metric in metrics_list:
+            self._metrics.append(METRICS[metric](self._messenger))
+
+    def _on_connect(self, _, __, ___, rc):
+        if rc == 0:
+            self._messenger.create_device()
+            for metric in self._metrics:
+                metric.create()
+                metric.send()
+
+    def _on_disconnect(self, _, __, rc):
+        if rc != 0:
             logger.error("Unexpected disconnection.")
 
-    client = MQTTClient("wb-mqtt-metrics", broker_url)
-    client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.start()
+    def run(self, period):
+        self._mqtt_client.start()
+        while True:
+            logger.info("Sending metrics")
+            for metric in self._metrics:
+                metric.send()
+            time.sleep(period)
 
-    return client
+    def stop(self):
+        self._mqtt_client.stop()
 
 
 def main(argv=None):
@@ -53,18 +68,10 @@ def main(argv=None):
 
         metrics_list = data["metrics"]["list"]
 
-    client = connect_mqtt(broker_url)
-    messenger = DeviceMessenger(client=client, device_name=device_name)
-
-    metrics = []
-    for metric in metrics_list:
-        metrics.append(METRICS[metric](messenger))
+    client = MetricClient(broker_url, device_name, metrics_list)
 
     try:
-        while True:
-            for metric in metrics:
-                metric.send(messenger)
-            time.sleep(period)
+        client.run(period)
     finally:
         client.stop()
 
