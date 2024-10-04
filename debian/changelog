@@ -1,3 +1,9 @@
+wb-mqtt-metrics (0.3.5) stable; urgency=medium
+
+  * Add json meta for controls
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Wed, 02 Oct 2024 17:39:00 +0400
+
 wb-mqtt-metrics (0.3.4) stable; urgency=medium
 
   * Add meta and values republication on mosquitto restart

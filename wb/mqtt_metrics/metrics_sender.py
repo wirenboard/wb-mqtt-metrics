@@ -41,7 +41,7 @@ class MetricClient:
     def run(self, period):
         self._mqtt_client.start()
         while True:
-            logger.info("Sending metrics")
+            logger.debug("Sending metrics")
             for metric in self._metrics:
                 metric.send()
             time.sleep(period)
