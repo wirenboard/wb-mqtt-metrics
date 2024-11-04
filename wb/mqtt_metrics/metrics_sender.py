@@ -1,5 +1,6 @@
 import argparse
 import logging
+import signal
 import sys
 import time
 
@@ -23,9 +24,8 @@ class MetricClient:
         self._mqtt_client.on_disconnect = self._on_disconnect
 
         self._messenger = MqttMessenger(client=self._mqtt_client, device_name=device_name)
-        self._metrics = []
-        for metric in metrics_list:
-            self._metrics.append(METRICS[metric](self._messenger))
+        self._metrics = [METRICS[metric](self._messenger) for metric in metrics_list]
+        self._stopped = False
 
     def _on_connect(self, _, __, ___, rc):
         if rc == 0:
@@ -38,15 +38,26 @@ class MetricClient:
         if rc != 0:
             logger.error("Unexpected disconnection.")
 
+    def _signal(self, *_):
+        logger.debug("Asynchronous interrupt, stopping")
+        self._stopped = True
+
     def run(self, period):
         self._mqtt_client.start()
-        while True:
+
+        signal.signal(signal.SIGINT, self._signal)
+        signal.signal(signal.SIGTERM, self._signal)
+
+        while not self._stopped:
             logger.debug("Sending metrics")
             for metric in self._metrics:
                 metric.send()
             time.sleep(period)
 
     def stop(self):
+        logger.info("Removing virtual device")
+        self._messenger.remove_device()
+        logger.info("Stopping mqtt client")
         self._mqtt_client.stop()
 
 
