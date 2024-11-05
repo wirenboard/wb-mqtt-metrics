@@ -7,16 +7,22 @@ class MqttMessenger:
     def __init__(self, client: MQTTClient, device_name: str):
         self.client = client
         self.device_name = device_name
+        self.cleanup_topics = []
 
     def create_device(self):
         meta = {"driver": "wb-mqtt-metrics", "title": {"en": "Metrics", "ru": "Метрики"}}
-        self.client.publish(f"/devices/{self.device_name}/meta", json.dumps(meta), retain=True, qos=1)
-        self.client.publish(f"/devices/{self.device_name}/meta/driver", meta["driver"], retain=True, qos=1)
-        self.client.publish(f"/devices/{self.device_name}/meta/name", meta["title"]["en"], retain=True, qos=1)
-        self.client.publish(f"/devices/{self.device_name}/meta/error", None, retain=True, qos=1)
+        self._publish(f"/devices/{self.device_name}/meta", json.dumps(meta))
+        self._publish(f"/devices/{self.device_name}/meta/driver", meta["driver"])
+        self._publish(f"/devices/{self.device_name}/meta/name", meta["title"]["en"])
+        self._publish(f"/devices/{self.device_name}/meta/error", None)
+
+    def remove_device(self):
+        for topic in self.cleanup_topics:
+            self.client.publish(topic, None, retain=True, qos=1)
 
     def _publish(self, topic, value):
         self.client.publish(topic, value, retain=True, qos=1)
+        self.cleanup_topics.append(topic)
 
     # pylint: disable=too-many-arguments
     def create_control(self, metric_name, ctrl_type, units="", ctrl_min=0, ctrl_max=None):
