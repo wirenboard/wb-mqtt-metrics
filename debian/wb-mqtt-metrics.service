@@ -1,5 +1,5 @@
 [Unit]
-Description=metrics sender.
+Description=metrics sender
 After=wb-configs.service mosquitto.service
 
 [Service]
