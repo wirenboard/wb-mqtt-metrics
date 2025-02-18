@@ -45,6 +45,5 @@ class MqttMessenger:
         self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta", json.dumps(meta))
         self.cleanup_topics.append(f"/devices/{self.device_name}/controls/{metric_name}")
 
-
     def send_value(self, metric_name, value):
         self._publish(f"/devices/{self.device_name}/controls/{metric_name}", value, cleanup=False)
