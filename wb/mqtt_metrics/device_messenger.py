@@ -20,9 +20,10 @@ class MqttMessenger:
         for topic in self.cleanup_topics:
             self.client.publish(topic, None, retain=True, qos=1)
 
-    def _publish(self, topic, value):
+    def _publish(self, topic, value, cleanup=True):
         self.client.publish(topic, value, retain=True, qos=1)
-        self.cleanup_topics.append(topic)
+        if cleanup:
+            self.cleanup_topics.append(topic)
 
     # pylint: disable=too-many-arguments
     def create_control(self, metric_name, ctrl_type, units="", ctrl_min=0, ctrl_max=None):
@@ -42,6 +43,8 @@ class MqttMessenger:
             meta["min"] = ctrl_min
 
         self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta", json.dumps(meta))
+        self.cleanup_topics.append(f"/devices/{self.device_name}/controls/{metric_name}")
+
 
     def send_value(self, metric_name, value):
-        self._publish(f"/devices/{self.device_name}/controls/{metric_name}", value)
+        self._publish(f"/devices/{self.device_name}/controls/{metric_name}", value, cleanup=False)

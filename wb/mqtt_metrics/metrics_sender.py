@@ -67,7 +67,7 @@ def main(argv=None):
 
     parser = argparse.ArgumentParser(description="The tool to send metrics")
 
-    parser.add_argument("-c", "--config", action="store", help="get data from config")
+    parser.add_argument("-c", "--config", type=str, default="/etc/wb-mqtt-metrics.conf", help="get data from config")
 
     args = parser.parse_args(argv[1:])
 

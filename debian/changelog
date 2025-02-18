@@ -1,3 +1,9 @@
+wb-mqtt-metrics (0.3.7) stable; urgency=medium
+
+  * Fix memory leak
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Tue, 18 Feb 2025 16:50:00 +0400
+
 wb-mqtt-metrics (0.3.6) stable; urgency=medium
 
   * Cleanup topics on service stop
