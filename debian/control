@@ -13,9 +13,11 @@ Section: python
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}, python3-systemd, python3-wb-common (>= 2.1.0), python3-yaml
 Description: python3 library for sending metrics to mqtt-channels
+ The package includes utility functions for wb-mqtt-metrics.
 
 Package: wb-mqtt-metrics
 Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}, ${python3:Depends}, python3-wb-mqtt-metrics (= ${binary:Version})
 Description: Wirenboard tool for sending metrics to mqtt-channels
+ wb-mqtt-metrics is a service which sends system metrics to mqtt.

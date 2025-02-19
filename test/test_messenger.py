@@ -16,6 +16,7 @@ def test_topics_cleanup(mocker):
         "/devices/test_device/controls/test_metric/meta/max",
         "/devices/test_device/controls/test_metric/meta/min",
         "/devices/test_device/controls/test_metric/meta",
+        "/devices/test_device/controls/test_metric",
     ]
     messenger.client.publish = mocker.MagicMock()
     messenger.remove_device()
