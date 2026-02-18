@@ -5,11 +5,11 @@ def test_topics_cleanup(mocker):
     messenger = MqttMessenger(mocker.MagicMock(), "test_device")
     messenger.create_device()
     meta = {
-       "type": "value",
-       "units": "V",
-       "min": 0,
-       "max": 100
-   }
+        "type": "value",
+        "units": "V",
+        "min": 0,
+        "max": 100
+    }
     messenger.create_control("test_metric", meta)
     assert messenger.cleanup_topics == [
         "/devices/test_device/meta",
