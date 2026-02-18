@@ -26,19 +26,26 @@ class MqttMessenger:
             self.cleanup_topics.append(topic)
 
     # pylint: disable=too-many-arguments
-    def create_control(self, metric_name, ctrl_type, units="", ctrl_min=0, ctrl_max=None):
+    def create_control(self, metric_name, ctrl_meta):
+        ctrl_type = ctrl_meta["type"]
         meta = {"type": ctrl_type, "readonly": True}
         self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta/type", ctrl_type)
         self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta/readonly", "1")
 
+        if ctrl_meta.get("title"):
+            meta["title"] = ctrl_meta.get("title")
+
+        units = ctrl_meta.get("units")
         if ctrl_type == "value" and units:
             self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta/units", units)
             meta["units"] = units
 
         if ctrl_type in {"value", "range"}:
-            if ctrl_max:
+            ctrl_max = ctrl_meta.get("max")
+            if ctrl_max is not None:
                 self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta/max", ctrl_max)
                 meta["max"] = ctrl_max
+            ctrl_min = ctrl_meta.get("min", 0)
             self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta/min", ctrl_min)
             meta["min"] = ctrl_min
 

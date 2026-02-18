@@ -73,25 +73,67 @@ class Metric(metaclass=ABCMeta):
 
 
 class LoadAverage(Metric):
+    CONTROL_DEFINITIONS = {
+        "load_average_1min": {
+            "title": {"en": "Load average (1 min)", "ru": "Средняя нагрузка (1 мин)"},
+            "type": "value",
+            "units": "tasks",
+        },
+        "load_average_5min": {
+            "title": {"en": "Load average (5 min)", "ru": "Средняя нагрузка (5 мин)"},
+            "type": "value",
+            "units": "tasks",
+        },
+        "load_average_15min": {
+            "title": {"en": "Load average (15 min)", "ru": "Средняя нагрузка (15 мин)"},
+            "type": "value",
+            "units": "tasks",
+        },
+    }
+
     def create(self):
-        self._messenger.create_control("load_average_1min", "value", "tasks")
-        self._messenger.create_control("load_average_5min", "value", "tasks")
-        self._messenger.create_control("load_average_15min", "value", "tasks")
+        for metric_name, meta in self.CONTROL_DEFINITIONS.items():
+            self._messenger.create_control(metric_name, meta)
 
     def send(self):
         load_averages = get_load_averages()
-        self._messenger.send_value("load_average_1min", load_averages[0])
-        self._messenger.send_value("load_average_5min", load_averages[1])
-        self._messenger.send_value("load_average_15min", load_averages[2])
+        for metric_name, value in zip(self.CONTROL_DEFINITIONS, load_averages):
+            self._messenger.send_value(metric_name, value)
 
 
 class FreeRam(Metric):
+    CONTROL_DEFINITIONS = {
+        "ram_available": {
+            "title": {"en": "RAM available", "ru": "Доступная оперативная память"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "ram_used": {
+            "title": {"en": "RAM used", "ru": "Используемая оперативная память"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "ram_total": {
+            "title": {"en": "RAM total", "ru": "Всего оперативной памяти"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "swap_total": {
+            "title": {"en": "Swap total", "ru": "Всего swap памяти"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "swap_used": {
+            "title": {"en": "Swap used", "ru": "Используется swap"},
+            "type": "value",
+            "units": "MiB",
+        },
+    }
+
     def create(self):
-        self._messenger.create_control("ram_available", "value", "MiB")
-        self._messenger.create_control("ram_used", "value", "MiB")
-        self._messenger.create_control("ram_total", "value", "MiB")
-        self._messenger.create_control("swap_total", "value", "MiB")
-        self._messenger.create_control("swap_used", "value", "MiB")
+        for metric_name, meta in self.CONTROL_DEFINITIONS.items():
+            self._messenger.create_control(metric_name, meta)
+
         ram_data = get_ram_data()
         self._messenger.send_value("ram_total", ram_data["ram_total"])
         self._messenger.send_value("swap_total", ram_data["swap_total"])
@@ -104,10 +146,27 @@ class FreeRam(Metric):
 
 
 class DevRoot(Metric):
+    CONTROL_DEFINITIONS = {
+        "dev_root_used_space": {
+            "title": {"en": "Used space in dev root", "ru": "Используемое место в корневом разделе"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "dev_root_total_space": {
+            "title": {"en": "Total space of dev root", "ru": "Общий размер корневого раздела"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "dev_root_linked_on": {
+            "title": {"en": "Dev root linked on", "ru": "Корневой раздел смонтирован на"},
+            "type": "text",
+        },
+    }
+
     def create(self):
-        self._messenger.create_control("dev_root_used_space", "value", "MiB")
-        self._messenger.create_control("dev_root_total_space", "value", "MiB")
-        self._messenger.create_control("dev_root_linked_on", "text")
+        for metric_name, meta in self.CONTROL_DEFINITIONS.items():
+            self._messenger.create_control(metric_name, meta)
+
         df_dev_root = get_df("/")
         self._messenger.send_value("dev_root_linked_on", get_dev_root_link())
         self._messenger.send_value("dev_root_total_space", df_dev_root[1])
@@ -117,9 +176,22 @@ class DevRoot(Metric):
 
 
 class Data(Metric):
+    CONTROL_DEFINITIONS = {
+        "data_used_space": {
+            "title": {"en": "Data used space", "ru": "Используемое место в разделе данных"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "data_total_space": {
+            "title": {"en": "Data total space", "ru": "Общий размер раздела данных"},
+            "type": "value",
+            "units": "MiB",
+        },
+    }
+
     def create(self):
-        self._messenger.create_control("data_used_space", "value", "MiB")
-        self._messenger.create_control("data_total_space", "value", "MiB")
+        for metric_name, meta in self.CONTROL_DEFINITIONS.items():
+            self._messenger.create_control(metric_name, meta)
         self._messenger.send_value("data_total_space", get_df("/mnt/data")[1])
 
     def send(self):

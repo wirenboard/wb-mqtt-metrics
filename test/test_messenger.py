@@ -4,7 +4,13 @@ from wb.mqtt_metrics.device_messenger import MqttMessenger
 def test_topics_cleanup(mocker):
     messenger = MqttMessenger(mocker.MagicMock(), "test_device")
     messenger.create_device()
-    messenger.create_control("test_metric", "value", "V", 0, 100)
+    meta = {
+       "type": "value",
+       "units": "V",
+       "min": 0,
+       "max": 100
+   }
+    messenger.create_control("test_metric", meta)
     assert messenger.cleanup_topics == [
         "/devices/test_device/meta",
         "/devices/test_device/meta/driver",
