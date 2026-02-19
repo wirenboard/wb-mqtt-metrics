@@ -1,5 +1,7 @@
+import json
 import logging
 
+from wb.mqtt_metrics.metrics import Data, DevRoot, FreeRam, LoadAverage
 from wb.mqtt_metrics.metrics_sender import MetricClient
 
 TEST_DEVICE_NAME = "device"
@@ -7,6 +9,27 @@ TEST_BROKER_URL = "test"
 TEST_METRICS_LIST = ["LoadAverage", "FreeRam", "DevRoot", "Data"]
 
 logger = logging.getLogger()
+
+
+def _control_meta_value(ctrl_meta):
+    ctrl_type = ctrl_meta["type"]
+    payload = {"type": ctrl_type, "readonly": True}
+
+    title = ctrl_meta.get("title")
+    if title:
+        payload["title"] = title
+
+    units = ctrl_meta.get("units")
+    if ctrl_type == "value" and units:
+        payload["units"] = units
+
+    if ctrl_type in {"value", "range"}:
+        ctrl_max = ctrl_meta.get("max")
+        if ctrl_max is not None:
+            payload["max"] = ctrl_max
+        payload["min"] = ctrl_meta.get("min", 0)
+
+    return json.dumps(payload)
 
 START_PUBLICATIONS = [
     (
@@ -22,7 +45,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/load_average_1min/meta/min", 0),
     (
         "/devices/device/controls/load_average_1min/meta",
-        '{"type": "value", "readonly": true, "units": "tasks", "min": 0}',
+        _control_meta_value(LoadAverage.CONTROL_DEFINITIONS["load_average_1min"]),
     ),
     ("/devices/device/controls/load_average_5min/meta/type", "value"),
     ("/devices/device/controls/load_average_5min/meta/readonly", "1"),
@@ -30,7 +53,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/load_average_5min/meta/min", 0),
     (
         "/devices/device/controls/load_average_5min/meta",
-        '{"type": "value", "readonly": true, "units": "tasks", "min": 0}',
+        _control_meta_value(LoadAverage.CONTROL_DEFINITIONS["load_average_5min"]),
     ),
     ("/devices/device/controls/load_average_15min/meta/type", "value"),
     ("/devices/device/controls/load_average_15min/meta/readonly", "1"),
@@ -38,7 +61,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/load_average_15min/meta/min", 0),
     (
         "/devices/device/controls/load_average_15min/meta",
-        '{"type": "value", "readonly": true, "units": "tasks", "min": 0}',
+        _control_meta_value(LoadAverage.CONTROL_DEFINITIONS["load_average_15min"]),
     ),
     ("/devices/device/controls/load_average_1min", "t"),
     ("/devices/device/controls/load_average_5min", "e"),
@@ -49,7 +72,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/ram_available/meta/min", 0),
     (
         "/devices/device/controls/ram_available/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(FreeRam.CONTROL_DEFINITIONS["ram_available"]),
     ),
     ("/devices/device/controls/ram_used/meta/type", "value"),
     ("/devices/device/controls/ram_used/meta/readonly", "1"),
@@ -57,7 +80,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/ram_used/meta/min", 0),
     (
         "/devices/device/controls/ram_used/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(FreeRam.CONTROL_DEFINITIONS["ram_used"]),
     ),
     ("/devices/device/controls/ram_total/meta/type", "value"),
     ("/devices/device/controls/ram_total/meta/readonly", "1"),
@@ -65,7 +88,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/ram_total/meta/min", 0),
     (
         "/devices/device/controls/ram_total/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(FreeRam.CONTROL_DEFINITIONS["ram_total"]),
     ),
     ("/devices/device/controls/swap_total/meta/type", "value"),
     ("/devices/device/controls/swap_total/meta/readonly", "1"),
@@ -73,7 +96,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/swap_total/meta/min", 0),
     (
         "/devices/device/controls/swap_total/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(FreeRam.CONTROL_DEFINITIONS["swap_total"]),
     ),
     ("/devices/device/controls/swap_used/meta/type", "value"),
     ("/devices/device/controls/swap_used/meta/readonly", "1"),
@@ -81,7 +104,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/swap_used/meta/min", 0),
     (
         "/devices/device/controls/swap_used/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(FreeRam.CONTROL_DEFINITIONS["swap_used"]),
     ),
     ("/devices/device/controls/ram_total", "test"),
     ("/devices/device/controls/swap_total", "test"),
@@ -94,7 +117,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/dev_root_used_space/meta/min", 0),
     (
         "/devices/device/controls/dev_root_used_space/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(DevRoot.CONTROL_DEFINITIONS["dev_root_used_space"]),
     ),
     ("/devices/device/controls/dev_root_total_space/meta/type", "value"),
     ("/devices/device/controls/dev_root_total_space/meta/readonly", "1"),
@@ -102,11 +125,14 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/dev_root_total_space/meta/min", 0),
     (
         "/devices/device/controls/dev_root_total_space/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(DevRoot.CONTROL_DEFINITIONS["dev_root_total_space"]),
     ),
     ("/devices/device/controls/dev_root_linked_on/meta/type", "text"),
     ("/devices/device/controls/dev_root_linked_on/meta/readonly", "1"),
-    ("/devices/device/controls/dev_root_linked_on/meta", '{"type": "text", "readonly": true}'),
+    (
+        "/devices/device/controls/dev_root_linked_on/meta",
+        _control_meta_value(DevRoot.CONTROL_DEFINITIONS["dev_root_linked_on"]),
+    ),
     ("/devices/device/controls/dev_root_linked_on", "test"),
     ("/devices/device/controls/dev_root_total_space", "e"),
     ("/devices/device/controls/dev_root_used_space", "t"),
@@ -116,7 +142,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/data_used_space/meta/min", 0),
     (
         "/devices/device/controls/data_used_space/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(Data.CONTROL_DEFINITIONS["data_used_space"]),
     ),
     ("/devices/device/controls/data_total_space/meta/type", "value"),
     ("/devices/device/controls/data_total_space/meta/readonly", "1"),
@@ -124,7 +150,7 @@ START_PUBLICATIONS = [
     ("/devices/device/controls/data_total_space/meta/min", 0),
     (
         "/devices/device/controls/data_total_space/meta",
-        '{"type": "value", "readonly": true, "units": "MiB", "min": 0}',
+        _control_meta_value(Data.CONTROL_DEFINITIONS["data_total_space"]),
     ),
     ("/devices/device/controls/data_total_space", "e"),
     ("/devices/device/controls/data_used_space", "t"),
