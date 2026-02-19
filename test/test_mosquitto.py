@@ -31,6 +31,7 @@ def _control_meta_value(ctrl_meta):
 
     return json.dumps(payload)
 
+
 START_PUBLICATIONS = [
     (
         "/devices/device/meta",
