@@ -1,6 +1,6 @@
 wb-mqtt-metrics (0.5.0) stable; urgency=medium
 
-  * Remove python3-wb-mqtt-metrics deb package, no functional changes
+  * Convert python3-wb-mqtt-metrics into transitional dummy package, no functional changes
 
  -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Fri, 24 Apr 2026 10:40:00 +0400
 
