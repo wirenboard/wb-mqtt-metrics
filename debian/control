@@ -2,22 +2,35 @@ Source: wb-mqtt-metrics
 Section: misc
 Priority: optional
 Maintainer: Wiren Board Team <info@wirenboard.com>
-Build-Depends: debhelper (>= 10), dh-python, python3-all, python3-setuptools,
-               python3-systemd, python3-wb-common (>= 2.1.0), python3-yaml, python3-pytest, python3-pytest-mock
-Standards-Version: 4.5.0
+Build-Depends: debhelper-compat (= 11),
+               dh-python,
+               python3-all,
+               python3-setuptools,
+               python3-systemd,
+               python3-wb-common (>= 2.1.0),
+               python3-yaml,
+               python3-pytest,
+               python3-pytest-mock
+Standards-Version: 4.5.1
 Homepage: https://github.com/wirenboard/wb-mqtt-metrics/
 X-Python3-Version: >= 3.9
 
 Package: python3-wb-mqtt-metrics
 Section: python
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, python3-systemd, python3-wb-common (>= 2.1.0), python3-yaml
-Description: python3 library for sending metrics to mqtt-channels
- The package includes utility functions for wb-mqtt-metrics.
+Depends: wb-mqtt-metrics (>= 0.5.0)
+Description: transitional dummy package
+ This is a transitional dummy package. It can safely be removed.
 
 Package: wb-mqtt-metrics
 Architecture: all
-Multi-Arch: foreign
-Depends: ${misc:Depends}, ${python3:Depends}, python3-wb-mqtt-metrics (= ${binary:Version})
+Breaks: python3-wb-mqtt-metrics (<< 0.5.0)
+Replaces: python3-wb-mqtt-metrics (<< 0.5.0)
+Provides: python3-wb-mqtt-metrics
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         python3-systemd,
+         python3-wb-common (>= 2.1.0),
+         python3-yaml
 Description: Wirenboard tool for sending metrics to mqtt-channels
  wb-mqtt-metrics is a service which sends system metrics to mqtt.
