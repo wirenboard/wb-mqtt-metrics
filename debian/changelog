@@ -1,3 +1,12 @@
+wb-mqtt-metrics (0.6.0) stable; urgency=medium
+
+  * Fix unbounded growth of the cleanup topic list on every MQTT reconnect
+  * Stop on SIGTERM immediately instead of waiting out the current period
+  * Collect metrics from /proc, statvfs() and getloadavg() instead of running
+    df, free, uptime and mount; the service no longer spawns subprocesses
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Thu, 20 Aug 2026 16:40:00 +0400
+
 wb-mqtt-metrics (0.5.0) stable; urgency=medium
 
   * Convert python3-wb-mqtt-metrics into transitional dummy package, no functional changes

@@ -2,15 +2,15 @@ Source: wb-mqtt-metrics
 Section: misc
 Priority: optional
 Maintainer: Wiren Board Team <info@wirenboard.com>
-Build-Depends: debhelper-compat (= 11),
+Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,
                python3-setuptools,
                python3-systemd,
                python3-wb-common (>= 2.1.0),
                python3-yaml,
-               python3-pytest,
-               python3-pytest-mock
+               python3-pytest <!nocheck>,
+               python3-pytest-mock <!nocheck>
 Standards-Version: 4.5.1
 Homepage: https://github.com/wirenboard/wb-mqtt-metrics/
 X-Python3-Version: >= 3.9
