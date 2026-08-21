@@ -2,7 +2,7 @@ import argparse
 import logging
 import signal
 import sys
-import time
+import threading
 
 import yaml
 from systemd.journal import JournalHandler
@@ -25,7 +25,7 @@ class MetricClient:
 
         self._messenger = MqttMessenger(client=self._mqtt_client, device_name=device_name)
         self._metrics = [METRICS[metric](self._messenger) for metric in metrics_list]
-        self._stopped = False
+        self._stop_event = threading.Event()
 
     def _on_connect(self, _, __, ___, rc):
         if rc == 0:
@@ -39,8 +39,8 @@ class MetricClient:
             logger.error("Unexpected disconnection.")
 
     def _signal(self, *_):
-        logger.debug("Asynchronous interrupt, stopping")
-        self._stopped = True
+        logger.info("Asynchronous interrupt, stopping")
+        self._stop_event.set()
 
     def run(self, period):
         self._mqtt_client.start()
@@ -48,11 +48,14 @@ class MetricClient:
         signal.signal(signal.SIGINT, self._signal)
         signal.signal(signal.SIGTERM, self._signal)
 
-        while not self._stopped:
+        while not self._stop_event.is_set():
             logger.debug("Sending metrics")
             for metric in self._metrics:
                 metric.send()
-            time.sleep(period)
+            # wait() returns as soon as _signal() sets the event. time.sleep() would not:
+            # it is resumed after the handler returns (PEP 475), delaying shutdown by up
+            # to a full period, long enough for systemd to SIGKILL before cleanup runs.
+            self._stop_event.wait(period)
 
     def stop(self):
         logger.info("Removing virtual device")
@@ -65,7 +68,9 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    parser = argparse.ArgumentParser(description="The tool to send metrics")
+    parser = argparse.ArgumentParser(
+        description="The tool to send metrics", formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
     parser.add_argument(
         "-c", "--config", type=str, default="/etc/wb-mqtt-metrics.conf", help="get data from config"

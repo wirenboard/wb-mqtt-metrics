@@ -1,62 +1,67 @@
+import os
 import shutil
-import subprocess
 from abc import ABCMeta, abstractmethod
 
 from .device_messenger import MqttMessenger
 
-FREE_PATH = shutil.which("free")
-UPTIME_PATH = shutil.which("uptime")
-DF_PATH = shutil.which("df")
-MOUNT_PATH = shutil.which("mount")
+MIB = 1024 * 1024
+KIB_PER_MIB = 1024
+
+MEMINFO_PATH = "/proc/meminfo"
+MOUNTINFO_PATH = "/proc/self/mountinfo"
+SYS_DEV_BLOCK_PATH = "/sys/dev/block"
+
+
+def read_meminfo():
+    meminfo = {}
+    with open(MEMINFO_PATH, encoding="utf-8") as meminfo_file:
+        for line in meminfo_file:
+            name, _, rest = line.partition(":")
+            meminfo[name] = int(rest.split()[0])
+    return meminfo
 
 
 def get_ram_data():
-    with subprocess.Popen([FREE_PATH, "-m"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
-        cmd_res = proc.stdout.readlines()
+    meminfo = read_meminfo()
 
-    keyword = "Mem:"
-    memory_data = cmd_res[1].decode()
-    memory_data = [int(x) for x in memory_data[memory_data.find(keyword) + len(keyword) :].split()]
-    output = {"ram_total": memory_data[0], "ram_used": memory_data[1], "ram_available": memory_data[5]}
+    ram_total = meminfo["MemTotal"] // KIB_PER_MIB
+    ram_available = meminfo["MemAvailable"] // KIB_PER_MIB
+    swap_total = meminfo["SwapTotal"] // KIB_PER_MIB
+    swap_free = meminfo["SwapFree"] // KIB_PER_MIB
 
-    keyword = "Swap:"
-    memory_data = cmd_res[2].decode()
-    memory_data = [int(x) for x in memory_data[memory_data.find(keyword) + len(keyword) :].split()]
-    output["swap_total"] = memory_data[0]
-    output["swap_used"] = memory_data[1]
-
-    return output
+    return {
+        "ram_total": ram_total,
+        "ram_used": ram_total - ram_available,
+        "ram_available": ram_available,
+        "swap_total": swap_total,
+        "swap_used": swap_total - swap_free,
+    }
 
 
 def get_load_averages():
-    with subprocess.Popen([UPTIME_PATH], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
-        cmd_res = proc.stdout.readlines()[0].decode()
-
-    keyword = "load average: "
-    load_averages = cmd_res[cmd_res.find(keyword) + len(keyword) :].split()
-    load_averages[0] = load_averages[0][:-1]
-    load_averages[1] = load_averages[1][:-1]
-    return [float(x.replace(",", ".")) for x in load_averages]
+    return [round(x, 2) for x in os.getloadavg()]
 
 
 def get_df(path):
-    with subprocess.Popen([DF_PATH, "-m", path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
-        cmd_res = proc.stdout.readlines()[1].decode()
-
-    df_def_root_data = cmd_res.split()
-    used = df_def_root_data[2]
-    total = df_def_root_data[1]
-    return [used, total]
+    usage = shutil.disk_usage(path)
+    return [usage.used // MIB, usage.total // MIB]
 
 
 def get_dev_root_link():
-    with subprocess.Popen([MOUNT_PATH], stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
-        for line in proc.stdout.readlines():
-            line_str = line.decode()
-            if " on / " in line_str:
-                return line_str.split()[0]
+    devno = None
+    with open(MOUNTINFO_PATH, encoding="utf-8") as mountinfo_file:
+        for line in mountinfo_file:
+            fields = line.split()
+            if len(fields) > 4 and fields[4] == "/":
+                devno = fields[2]
 
-    return "unknown"
+    if devno is None:
+        return "unknown"
+
+    try:
+        return "/dev/" + os.path.basename(os.readlink(os.path.join(SYS_DEV_BLOCK_PATH, devno)))
+    except OSError:
+        return "unknown"
 
 
 class Metric(metaclass=ABCMeta):
