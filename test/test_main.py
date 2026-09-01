@@ -99,8 +99,11 @@ def test_default_config_is_json():
         if (parent / "wb-mqtt-metrics.conf").exists()
     )
 
+    expected = valid_config(["LoadAverage", "FreeRam", "DevRoot", "Data"])
+    expected["mqtt"]["broker"] = "unix:///var/run/mosquitto/mosquitto.sock"
+
     with config_path.open(encoding="utf-8") as config_file:
-        assert json.load(config_file) == valid_config(["LoadAverage", "FreeRam", "DevRoot", "Data"])
+        assert json.load(config_file) == expected
 
 
 def test_authentication_failure_returns_2(mocker):
