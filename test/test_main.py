@@ -136,7 +136,7 @@ def test_publish_failure_after_connect_returns_1(mocker):
 
 def test_cleanup_waits_for_all_retained_publications(mocker):
     client = metrics_sender.MetricClient("tcp://localhost:1883", "metrics", [])
-    mocker.patch.object(client._mqtt_client, "stop")
+    mqtt_stop = mocker.patch.object(client._mqtt_client, "stop")
     publications = [mocker.MagicMock(), mocker.MagicMock()]
     for publication in publications:
         publication.is_published.return_value = True
@@ -151,12 +151,12 @@ def test_cleanup_waits_for_all_retained_publications(mocker):
 
     for publication in publications:
         publication.wait_for_publish.assert_called_once()
-    client._mqtt_client.stop.assert_called_once_with()
+    mqtt_stop.assert_called_once_with()
 
 
 def test_cleanup_without_broker_is_logged_and_client_still_stops(mocker, caplog):
     client = metrics_sender.MetricClient("tcp://localhost:1883", "metrics", [])
-    mocker.patch.object(client._mqtt_client, "stop")
+    mqtt_stop = mocker.patch.object(client._mqtt_client, "stop")
     remove_device = mocker.patch.object(client._messenger, "remove_device")
     caplog.set_level(logging.ERROR)
 
@@ -164,7 +164,7 @@ def test_cleanup_without_broker_is_logged_and_client_still_stops(mocker, caplog)
 
     assert "MQTT broker is unavailable" in caplog.text
     remove_device.assert_not_called()
-    client._mqtt_client.stop.assert_called_once_with()
+    mqtt_stop.assert_called_once_with()
 
 
 def test_unconfirmed_cleanup_is_logged(mocker, caplog):

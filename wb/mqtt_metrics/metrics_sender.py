@@ -119,6 +119,40 @@ class MetricClient:
             self._mqtt_client.stop()
 
 
+def load_config(config_path):
+    with open(config_path, encoding="utf-8") as config_file:
+        data = yaml.load(config_file, Loader=SafeLoader)
+    broker_url = data["mqtt"]["broker"]
+    period = data["mqtt"]["period"]
+    device_name = data["mqtt"]["device-name"]
+    metrics_list = data["metrics"]["list"]
+    if metrics_list is None:
+        metrics_list = []
+    if not isinstance(broker_url, str) or not broker_url.strip():
+        raise TypeError("mqtt.broker must be a non-empty string")
+    if (
+        isinstance(period, bool)
+        or not isinstance(period, (int, float))
+        or not math.isfinite(period)
+        or period <= 0
+    ):
+        raise TypeError("mqtt.period must be a positive finite number")
+    if (
+        not isinstance(device_name, str)
+        or not device_name.strip()
+        or any(char in device_name for char in "/+#")
+    ):
+        raise TypeError("mqtt.device-name must be a valid MQTT device id")
+    if not isinstance(metrics_list, list) or not all(isinstance(metric, str) for metric in metrics_list):
+        raise TypeError("metrics.list must be a list of strings")
+    if len(set(metrics_list)) != len(metrics_list):
+        raise TypeError("metrics.list must not contain duplicates")
+    unknown_metrics = set(metrics_list) - METRICS.keys()
+    if unknown_metrics:
+        raise TypeError(f"unknown metrics: {', '.join(sorted(unknown_metrics))}")
+    return broker_url, period, device_name, metrics_list
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -134,41 +168,11 @@ def main(argv=None):
     args = parser.parse_args(argv[1:])
 
     try:
-        with open(args.config, encoding="utf-8") as f:
-            data = yaml.load(f, Loader=SafeLoader)
-        broker_url = data["mqtt"]["broker"]
-        period = data["mqtt"]["period"]
-        device_name = data["mqtt"]["device-name"]
-        metrics_list = data["metrics"]["list"]
-        if metrics_list is None:
-            metrics_list = []
-        if not isinstance(broker_url, str) or not broker_url.strip():
-            raise TypeError("mqtt.broker must be a non-empty string")
-        if (
-            isinstance(period, bool)
-            or not isinstance(period, (int, float))
-            or not math.isfinite(period)
-            or period <= 0
-        ):
-            raise TypeError("mqtt.period must be a positive finite number")
-        if (
-            not isinstance(device_name, str)
-            or not device_name.strip()
-            or any(char in device_name for char in "/+#")
-        ):
-            raise TypeError("mqtt.device-name must be a valid MQTT device id")
-        if not isinstance(metrics_list, list) or not all(isinstance(metric, str) for metric in metrics_list):
-            raise TypeError("metrics.list must be a list of strings")
-        if len(set(metrics_list)) != len(metrics_list):
-            raise TypeError("metrics.list must not contain duplicates")
-        unknown_metrics = set(metrics_list) - METRICS.keys()
+        broker_url, period, device_name, metrics_list = load_config(args.config)
     except (OSError, yaml.YAMLError, KeyError, TypeError, OverflowError) as error:
         logger.error("Failed to read config %s: %s", args.config, error)
         return EXIT_CONFIG_ERROR
 
-    if unknown_metrics:
-        logger.error("Unknown metrics in config: %s", ", ".join(sorted(unknown_metrics)))
-        return EXIT_CONFIG_ERROR
     if not metrics_list:
         logger.info("No metrics enabled, nothing to do")
         return EXIT_STOPPED
