@@ -45,6 +45,10 @@ def test_unknown_metric_returns_6(tmp_path):
     ("section", "key", "value"),
     [
         ("mqtt", "broker", ""),
+        ("mqtt", "broker", "invalid://broker"),
+        ("mqtt", "broker", "tcp://localhost"),
+        ("mqtt", "broker", "tcp://:1883"),
+        ("mqtt", "broker", "unix://"),
         ("mqtt", "period", 0),
         ("mqtt", "period", float("nan")),
         ("mqtt", "device-name", "bad/device"),

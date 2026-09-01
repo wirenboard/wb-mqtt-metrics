@@ -15,6 +15,7 @@
           "type": "string",
           "title": "MQTT broker URL",
           "minLength": 1,
+          "pattern": "^(unix|mqtt-tcp|tcp|ws)://",
           "default": "unix:///var/run/mosquitto/mosquitto.sock"
         },
         "period": {

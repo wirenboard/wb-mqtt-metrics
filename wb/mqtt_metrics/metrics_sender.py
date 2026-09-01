@@ -5,6 +5,7 @@ import signal
 import sys
 import threading
 import time
+from urllib.parse import urlparse
 
 import yaml
 from systemd.journal import JournalHandler
@@ -25,6 +26,7 @@ EXIT_STOPPED = 7
 
 MQTT_AUTH_ERROR_CODES = (4, 5)
 MQTT_CLEANUP_TIMEOUT_S = 2.0
+MQTT_NETWORK_SCHEMES = ("mqtt-tcp", "tcp", "ws")
 
 
 class MetricClient:
@@ -130,6 +132,7 @@ def load_config(config_path):
         metrics_list = []
     if not isinstance(broker_url, str) or not broker_url.strip():
         raise TypeError("mqtt.broker must be a non-empty string")
+    _validate_broker_url(broker_url)
     if (
         isinstance(period, bool)
         or not isinstance(period, (int, float))
@@ -151,6 +154,24 @@ def load_config(config_path):
     if unknown_metrics:
         raise TypeError(f"unknown metrics: {', '.join(sorted(unknown_metrics))}")
     return broker_url, period, device_name, metrics_list
+
+
+def _validate_broker_url(broker_url):
+    parsed_url = urlparse(broker_url)
+    if parsed_url.scheme == "unix":
+        if not parsed_url.path:
+            raise TypeError("mqtt.broker unix URL must contain a socket path")
+        return
+
+    if parsed_url.scheme not in MQTT_NETWORK_SCHEMES:
+        raise TypeError(f"mqtt.broker has unsupported URL scheme: {parsed_url.scheme}")
+
+    try:
+        port = parsed_url.port
+    except ValueError as error:
+        raise TypeError(f"mqtt.broker has an invalid port: {error}") from error
+    if not parsed_url.hostname or port is None or port == 0:
+        raise TypeError("mqtt.broker network URL must contain a host and a valid port")
 
 
 def main(argv=None):
