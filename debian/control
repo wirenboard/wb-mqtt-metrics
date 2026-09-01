@@ -30,7 +30,8 @@ Provides: python3-wb-mqtt-metrics
 Depends: ${misc:Depends},
          ${python3:Depends},
          python3-systemd,
-         python3-wb-common (>= 2.1.0),
-         python3-yaml
+         python3-wb-common (>= 2.4.0~~),
+         python3-yaml,
+         wb-mqtt-confed
 Description: Wirenboard tool for sending metrics to mqtt-channels
  wb-mqtt-metrics is a service which sends system metrics to mqtt.

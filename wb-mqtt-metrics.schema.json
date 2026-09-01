@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "title": "Controller metrics",
+  "configFile": {
+    "path": "/etc/wb-mqtt-metrics.conf",
+    "service": "wb-mqtt-metrics"
+  },
+  "properties": {
+    "mqtt": {
+      "type": "object",
+      "title": "MQTT settings",
+      "properties": {
+        "broker": {
+          "type": "string",
+          "title": "MQTT broker URL",
+          "minLength": 1,
+          "default": "unix:///var/run/mosquitto/mosquitto.sock"
+        },
+        "period": {
+          "type": "number",
+          "title": "Publish period, seconds",
+          "exclusiveMinimum": true,
+          "minimum": 0,
+          "default": 5
+        },
+        "device-name": {
+          "type": "string",
+          "title": "MQTT device ID",
+          "minLength": 1,
+          "pattern": "^[^/+#]+$",
+          "default": "metrics"
+        }
+      },
+      "required": ["broker", "period", "device-name"],
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "title": "Published metrics",
+      "properties": {
+        "list": {
+          "type": "array",
+          "title": "Metrics",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["LoadAverage", "FreeRam", "DevRoot", "Data"]
+          },
+          "default": ["LoadAverage", "FreeRam", "DevRoot", "Data"]
+        }
+      },
+      "required": ["list"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["mqtt", "metrics"],
+  "additionalProperties": false,
+  "options": {
+    "disable_edit_json": true,
+    "disable_properties": true
+  }
+}

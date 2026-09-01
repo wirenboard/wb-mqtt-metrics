@@ -20,10 +20,11 @@ def test_topics_cleanup(mocker):
         "/devices/test_device/controls/test_metric",
     ]
     messenger.client.publish = mocker.MagicMock()
-    messenger.remove_device()
+    publications = messenger.remove_device()
     for topic in messenger.cleanup_topics:
         messenger.client.publish.assert_any_call(topic, None, retain=True, qos=1)
     assert messenger.client.publish.call_count == len(messenger.cleanup_topics)
+    assert [topic for topic, _ in publications] == messenger.cleanup_topics
 
 
 def test_topics_cleanup_after_reconnect(mocker):

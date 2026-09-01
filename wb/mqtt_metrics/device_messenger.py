@@ -17,8 +17,10 @@ class MqttMessenger:
         self._publish(f"/devices/{self.device_name}/meta/error", None)
 
     def remove_device(self):
-        for topic in self.cleanup_topics:
-            self.client.publish(topic, None, retain=True, qos=1)
+        return [
+            (topic, self.client.publish(topic, None, retain=True, qos=1))
+            for topic in self.cleanup_topics
+        ]
 
     def _track(self, topic):
         # create_device() and create_control() re-run on every reconnect, so the same topic

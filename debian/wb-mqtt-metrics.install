@@ -1,2 +1,3 @@
 wb-metrics /usr/bin
 wb-mqtt-metrics.conf /etc
+wb-mqtt-metrics.schema.json /usr/share/wb-mqtt-confed/schemas

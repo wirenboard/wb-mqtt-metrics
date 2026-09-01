@@ -34,14 +34,18 @@ def test_run_returns_promptly_on_sigterm(mocker):
 
     mocker.patch("wb_common.mqtt_client.MQTTClient.publish")
     client = MetricClient(TEST_BROKER_URL, TEST_DEVICE_NAME, [])
-    mocker.patch.object(client._mqtt_client, "start")
 
     metric = SignallingMetric()
     client._metrics = [metric]
+    mocker.patch.object(
+        client._mqtt_client,
+        "start",
+        side_effect=lambda: client._on_connect(None, None, None, 0),
+    )
 
     try:
         started = time.monotonic()
-        client.run(TEST_PERIOD)
+        exit_code = client.run(TEST_PERIOD)
         elapsed = time.monotonic() - started
     finally:
         # never leave the test process with wb-mqtt-metrics' handlers installed
@@ -53,3 +57,4 @@ def test_run_returns_promptly_on_sigterm(mocker):
         "the wait is not being cut short by the signal"
     )
     assert metric.sends == 1, "the loop ran another cycle after the signal"
+    assert exit_code == 7
