@@ -45,9 +45,7 @@ class MetricClient:
         if code != 0:
             logger.error("MQTT connection failed, rc=%s", code)
             if not self._stop_event.is_set():
-                self._exit_code = (
-                    EXIT_INVALID_ARGUMENT if code in MQTT_AUTH_ERROR_CODES else EXIT_FAILURE
-                )
+                self._exit_code = EXIT_INVALID_ARGUMENT if code in MQTT_AUTH_ERROR_CODES else EXIT_FAILURE
                 self._stop_event.set()
             return
 
@@ -159,9 +157,7 @@ def main(argv=None):
             or any(char in device_name for char in "/+#")
         ):
             raise TypeError("mqtt.device-name must be a valid MQTT device id")
-        if not isinstance(metrics_list, list) or not all(
-            isinstance(metric, str) for metric in metrics_list
-        ):
+        if not isinstance(metrics_list, list) or not all(isinstance(metric, str) for metric in metrics_list):
             raise TypeError("metrics.list must be a list of strings")
         if len(set(metrics_list)) != len(metrics_list):
             raise TypeError("metrics.list must not contain duplicates")

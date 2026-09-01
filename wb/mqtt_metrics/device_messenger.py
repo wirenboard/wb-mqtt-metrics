@@ -18,8 +18,7 @@ class MqttMessenger:
 
     def remove_device(self):
         return [
-            (topic, self.client.publish(topic, None, retain=True, qos=1))
-            for topic in self.cleanup_topics
+            (topic, self.client.publish(topic, None, retain=True, qos=1)) for topic in self.cleanup_topics
         ]
 
     def _track(self, topic):

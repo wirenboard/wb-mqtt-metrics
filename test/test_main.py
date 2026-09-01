@@ -100,9 +100,7 @@ def test_default_config_is_json():
     )
 
     with config_path.open(encoding="utf-8") as config_file:
-        assert json.load(config_file) == valid_config(
-            ["LoadAverage", "FreeRam", "DevRoot", "Data"]
-        )
+        assert json.load(config_file) == valid_config(["LoadAverage", "FreeRam", "DevRoot", "Data"])
 
 
 def test_authentication_failure_returns_2(mocker):
