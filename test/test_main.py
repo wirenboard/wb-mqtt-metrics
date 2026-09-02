@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 import pytest
+import yaml
 
 from wb.mqtt_metrics import metrics_sender
 
@@ -96,7 +97,7 @@ def test_runtime_failure_returns_1_and_still_stops_client(tmp_path, mocker):
     client.stop.assert_called_once_with(remove_device=False)
 
 
-def test_default_config_is_json():
+def test_default_config_is_yaml():
     config_path = next(
         parent / "wb-mqtt-metrics.conf"
         for parent in Path(__file__).resolve().parents
@@ -107,7 +108,7 @@ def test_default_config_is_json():
     expected["mqtt"]["broker"] = "unix:///var/run/mosquitto/mosquitto.sock"
 
     with config_path.open(encoding="utf-8") as config_file:
-        assert json.load(config_file) == expected
+        assert yaml.safe_load(config_file) == expected
 
 
 def test_authentication_failure_returns_2(mocker):
