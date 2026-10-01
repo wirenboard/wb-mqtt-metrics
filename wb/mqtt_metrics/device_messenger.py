@@ -2,6 +2,8 @@ import json
 
 from wb_common.mqtt_client import MQTTClient
 
+REMOVE_DEVICE_TIMEOUT_S = 5  # the broker is local: its acknowledgements take milliseconds
+
 
 class MqttMessenger:
     def __init__(self, client: MQTTClient, device_name: str):
@@ -17,8 +19,12 @@ class MqttMessenger:
         self._publish(f"/devices/{self.device_name}/meta/error", None)
 
     def remove_device(self):
+        info = None
         for topic in self.cleanup_topics:
-            self.client.publish(topic, None, retain=True, qos=1)
+            info = self.client.publish(topic, None, retain=True, qos=1)
+        if info is not None:
+            # paho sends at most 20 QoS 1 messages at once: wait for the last one before stop()
+            info.wait_for_publish(timeout=REMOVE_DEVICE_TIMEOUT_S)
 
     def _track(self, topic):
         # create_device() and create_control() re-run on every reconnect, so the same topic

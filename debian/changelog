@@ -1,3 +1,19 @@
+wb-mqtt-metrics (0.7.0) stable; urgency=medium
+
+  * Wait for an unavailable MQTT broker instead of exiting, exit 2 on a rejected login
+  * Exit 6 on a missing or invalid config, 7 when no metrics are configured
+  * Report when the retained topics cannot be removed at shutdown because the broker is gone
+  * systemd: do not restart on exit codes 2 and 6, treat 7 as success
+  * Require python3-wb-common >= 2.4.0 for start(retry_first_connection=True), at build time as well
+  * Treat a broker URL the MQTT client cannot use, or a period that is not a positive number, as a config
+    error (exit 6) instead of crashing with 1
+  * Do not publish metrics while the broker is away: they used to queue up in the client and were
+    replayed in a burst of stale values on reconnect, which made mosquitto answer "Quota exceeded"
+  * Stopping the service can now take up to 5 seconds while the broker confirms the last retained
+    topic clear
+
+ -- Ekaterina Volkova <ekaterina.volkova@wirenboard.com>  Thu, 17 Sep 2026 15:23:07 +0000
+
 wb-mqtt-metrics (0.6.0) stable; urgency=medium
 
   * Fix unbounded growth of the cleanup topic list on every MQTT reconnect
