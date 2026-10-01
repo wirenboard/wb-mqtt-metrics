@@ -44,6 +44,7 @@ def test_nothing_to_do_exits_not_running(tmp_path, metrics_list):
     "mqtt",
     [
         {"broker": "tcp://user:secret@localhost"},
+        {"broker": "tcp://user:secret#x@localhost:1883"},
         {"broker": "foo://x"},
         {"broker": 1883},
         {"period": "fast"},
@@ -51,6 +52,7 @@ def test_nothing_to_do_exits_not_running(tmp_path, metrics_list):
     ],
     ids=[
         "broker-without-port",
+        "hash-in-broker-password",
         "unknown-broker-scheme",
         "broker-not-a-string",
         "non-numeric-period",

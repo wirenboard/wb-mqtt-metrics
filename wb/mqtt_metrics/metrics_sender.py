@@ -100,11 +100,14 @@ def check_broker_url(url):
 
     The message never carries the URL: it may hold a password and ends up in the journal.
     """
-    parsed = urlparse(str(url))  # YAML may hand over a number instead of a string
-    if parsed.scheme == "unix" and parsed.path:
-        return url
-    if parsed.scheme in BROKER_URL_HOST_SCHEMES and parsed.port:  # .port raises on a non-numeric port
-        return url
+    try:
+        parsed = urlparse(str(url))  # YAML may hand over a number instead of a string
+        if parsed.scheme == "unix" and parsed.path:
+            return url
+        if parsed.scheme in BROKER_URL_HOST_SCHEMES and parsed.port:
+            return url
+    except ValueError:
+        pass
     raise ValueError("broker URL must be unix:///path or tcp://host:port (also mqtt-tcp://, ws://)")
 
 
