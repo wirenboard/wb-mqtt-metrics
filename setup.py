@@ -12,7 +12,7 @@ setup(
     name="wb-mqtt-metrics",
     version=get_version(),
     description="metrics sender",
-    license="MIT",
+    license="MIT-WB",
     author="Sokolov Semen",
     author_email="s.sokolov@wirenboard.ru",
     maintainer="Wiren Board Team",

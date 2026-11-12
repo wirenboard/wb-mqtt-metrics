@@ -1,3 +1,11 @@
+wb-mqtt-metrics (0.7.1) stable; urgency=medium
+
+  * Switch the license to The WB License (MIT-WB): Automation Technologies, LLC (Wiren Board)
+    as the copyright holder, 2021 as the first publication year, use restricted to Wiren Board equipment
+  * Fill debian/copyright in the DEP-5 format
+
+ -- Ekaterina Volkova <ekaterina.volkova@wirenboard.com>  Thu, 12 Nov 2026 15:46:43 +0300
+
 wb-mqtt-metrics (0.7.0) stable; urgency=medium
 
   * Wait for an unavailable MQTT broker instead of exiting, exit 2 on a rejected login
