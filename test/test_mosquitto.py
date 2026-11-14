@@ -1,12 +1,12 @@
 import json
 import logging
 
-from wb.mqtt_metrics.metrics import Data, DevRoot, FreeRam, LoadAverage
+from wb.mqtt_metrics.metrics import Data, DevRoot, FreeRam, LoadAverage, SdCard
 from wb.mqtt_metrics.metrics_sender import MetricClient
 
 TEST_DEVICE_NAME = "device"
 TEST_BROKER_URL = "test"
-TEST_METRICS_LIST = ["LoadAverage", "FreeRam", "DevRoot", "Data"]
+TEST_METRICS_LIST = ["LoadAverage", "FreeRam", "DevRoot", "Data", "SdCard"]
 
 # Every value below is distinct and of the type the real helper returns, so that a
 # swapped index or a mixed-up path fails the assertion instead of slipping through.
@@ -21,6 +21,13 @@ TEST_RAM_DATA = {
 TEST_DEV_ROOT_LINK = "/dev/mmcblk0p2"
 # get_df() returns [used, total]
 TEST_DF = {"/": [1234, 7890], "/mnt/data": [4321, 9876]}
+TEST_SDCARD_DEVNO = "179:25"
+TEST_SDCARD_DATA = {
+    "sdcard_used_space": 2345,
+    "sdcard_total_space": 30436,
+    "sdcard_linked_on": "/dev/mmcblk1p1",
+    "sdcard_readonly": 1,
+}
 
 logger = logging.getLogger()
 
@@ -169,6 +176,38 @@ START_PUBLICATIONS = [
     ),
     ("/devices/device/controls/data_total_space", TEST_DF["/mnt/data"][1]),
     ("/devices/device/controls/data_used_space", TEST_DF["/mnt/data"][0]),
+    ("/devices/device/controls/sdcard_used_space/meta/type", "value"),
+    ("/devices/device/controls/sdcard_used_space/meta/readonly", "1"),
+    ("/devices/device/controls/sdcard_used_space/meta/units", "MiB"),
+    ("/devices/device/controls/sdcard_used_space/meta/min", 0),
+    (
+        "/devices/device/controls/sdcard_used_space/meta",
+        _control_meta_value(SdCard.CONTROL_DEFINITIONS["sdcard_used_space"]),
+    ),
+    ("/devices/device/controls/sdcard_total_space/meta/type", "value"),
+    ("/devices/device/controls/sdcard_total_space/meta/readonly", "1"),
+    ("/devices/device/controls/sdcard_total_space/meta/units", "MiB"),
+    ("/devices/device/controls/sdcard_total_space/meta/min", 0),
+    (
+        "/devices/device/controls/sdcard_total_space/meta",
+        _control_meta_value(SdCard.CONTROL_DEFINITIONS["sdcard_total_space"]),
+    ),
+    ("/devices/device/controls/sdcard_linked_on/meta/type", "text"),
+    ("/devices/device/controls/sdcard_linked_on/meta/readonly", "1"),
+    (
+        "/devices/device/controls/sdcard_linked_on/meta",
+        _control_meta_value(SdCard.CONTROL_DEFINITIONS["sdcard_linked_on"]),
+    ),
+    ("/devices/device/controls/sdcard_readonly/meta/type", "switch"),
+    ("/devices/device/controls/sdcard_readonly/meta/readonly", "1"),
+    (
+        "/devices/device/controls/sdcard_readonly/meta",
+        _control_meta_value(SdCard.CONTROL_DEFINITIONS["sdcard_readonly"]),
+    ),
+    ("/devices/device/controls/sdcard_used_space", TEST_SDCARD_DATA["sdcard_used_space"]),
+    ("/devices/device/controls/sdcard_total_space", TEST_SDCARD_DATA["sdcard_total_space"]),
+    ("/devices/device/controls/sdcard_linked_on", TEST_SDCARD_DATA["sdcard_linked_on"]),
+    ("/devices/device/controls/sdcard_readonly", TEST_SDCARD_DATA["sdcard_readonly"]),
 ]
 
 
@@ -185,5 +224,8 @@ def test_mosquitto_restart(mocker):
     mocker.patch("wb.mqtt_metrics.metrics.get_df", side_effect=lambda path: TEST_DF[path])
     mocker.patch("wb.mqtt_metrics.metrics.get_load_averages", return_value=TEST_LOAD_AVERAGES)
     mocker.patch("wb.mqtt_metrics.metrics.get_ram_data", return_value=TEST_RAM_DATA)
+    mocker.patch("wb.mqtt_metrics.metrics.is_sdcard_inserted", return_value=True)
+    mocker.patch("wb.mqtt_metrics.metrics.get_sdcard_devno", return_value=TEST_SDCARD_DEVNO)
+    mocker.patch("wb.mqtt_metrics.metrics.get_sdcard_data", return_value=TEST_SDCARD_DATA)
     client._mqtt_client._on_connect(None, None, None, 0)  # pylint: disable=protected-access
     assert publications == START_PUBLICATIONS

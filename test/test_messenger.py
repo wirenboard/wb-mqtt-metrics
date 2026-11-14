@@ -48,3 +48,20 @@ def test_topics_cleanup_after_reconnect(mocker):
     messenger.remove_device()
     published = [call.args[0] for call in messenger.client.publish.call_args_list]
     assert published == messenger.cleanup_topics
+
+
+def test_remove_control_clears_only_its_topics(mocker):
+    messenger = MqttMessenger(mocker.MagicMock(), "test_device")
+    messenger.create_device()
+    # a name that is a prefix of the other must not drag the other along
+    messenger.create_control("sdcard", {"type": "text"})
+    messenger.create_control("sdcard_used_space", {"type": "value", "units": "MiB"})
+    topics_before = list(messenger.cleanup_topics)
+    removed = [t for t in topics_before if t.startswith("/devices/test_device/controls/sdcard_used_space")]
+
+    messenger.client.publish = mocker.MagicMock()
+    messenger.remove_control("sdcard_used_space")
+
+    assert [call.args for call in messenger.client.publish.call_args_list] == [(t, None) for t in removed]
+    # remove_device() at shutdown must not clear them a second time
+    assert messenger.cleanup_topics == [t for t in topics_before if t not in removed]
