@@ -211,7 +211,7 @@ START_PUBLICATIONS = [
 ]
 
 
-def test_mosquitto_restart(mocker):
+def _publications_on_connect(mocker, data_partition):
     publications = []
 
     def publish(self, topic, value, retain, qos):  # pylint: disable=unused-argument
@@ -219,6 +219,7 @@ def test_mosquitto_restart(mocker):
 
     mocker.patch("wb_common.mqtt_client.MQTTClient.publish", new=publish)
     client = MetricClient(TEST_BROKER_URL, TEST_DEVICE_NAME, TEST_METRICS_LIST)
+    mocker.patch("wb.mqtt_metrics.metrics.is_separate_filesystem", return_value=data_partition)
     mocker.patch("wb.mqtt_metrics.metrics.get_dev_root_link", return_value=TEST_DEV_ROOT_LINK)
     # keyed by path: asking for a path the code should not touch raises KeyError
     mocker.patch("wb.mqtt_metrics.metrics.get_df", side_effect=lambda path: TEST_DF[path])
@@ -228,4 +229,15 @@ def test_mosquitto_restart(mocker):
     mocker.patch("wb.mqtt_metrics.metrics.get_sdcard_devno", return_value=TEST_SDCARD_DEVNO)
     mocker.patch("wb.mqtt_metrics.metrics.get_sdcard_data", return_value=TEST_SDCARD_DATA)
     client._mqtt_client._on_connect(None, None, None, 0)  # pylint: disable=protected-access
-    assert publications == START_PUBLICATIONS
+    return publications
+
+
+def test_mosquitto_restart(mocker):
+    assert _publications_on_connect(mocker, data_partition=True) == START_PUBLICATIONS
+
+
+def test_mosquitto_restart_without_data_partition(mocker):
+    # /mnt/data is a folder of the root filesystem: the Data metric publishes nothing
+    expected = [pub for pub in START_PUBLICATIONS if not pub[0].startswith("/devices/device/controls/data_")]
+    assert len(expected) < len(START_PUBLICATIONS)
+    assert _publications_on_connect(mocker, data_partition=False) == expected

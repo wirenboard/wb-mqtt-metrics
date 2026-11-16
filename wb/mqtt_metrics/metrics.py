@@ -11,6 +11,8 @@ MEMINFO_PATH = "/proc/meminfo"
 MOUNTINFO_PATH = "/proc/self/mountinfo"
 SYS_DEV_BLOCK_PATH = "/sys/dev/block"
 
+DATA_MOUNTPOINT = "/mnt/data"
+
 SDCARD_DEVICE = "/dev/mmcblk1p1"
 SDCARD_MOUNTPOINT = "/mnt/sdcard"
 
@@ -74,6 +76,13 @@ def get_block_device(devno):
 def get_dev_root_link():
     mount = find_mount("/")
     return get_block_device(mount[0] if mount else None)
+
+
+def is_separate_filesystem(path):
+    try:
+        return os.stat(path).st_dev != os.stat("/").st_dev
+    except OSError:
+        return False
 
 
 def is_sdcard_inserted():
@@ -227,13 +236,22 @@ class Data(Metric):
         },
     }
 
+    def __init__(self, messenger: MqttMessenger):
+        super().__init__(messenger)
+        self._enabled = False
+
     def create(self):
+        self._enabled = is_separate_filesystem(DATA_MOUNTPOINT)
+        if not self._enabled:
+            return
+
         for metric_name, meta in self.CONTROL_DEFINITIONS.items():
             self._messenger.create_control(metric_name, meta)
-        self._messenger.send_value("data_total_space", get_df("/mnt/data")[1])
+        self._messenger.send_value("data_total_space", get_df(DATA_MOUNTPOINT)[1])
 
     def send(self):
-        self._messenger.send_value("data_used_space", get_df("/mnt/data")[0])
+        if self._enabled:
+            self._messenger.send_value("data_used_space", get_df(DATA_MOUNTPOINT)[0])
 
 
 class SdCard(Metric):

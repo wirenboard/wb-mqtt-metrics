@@ -296,3 +296,79 @@ def test_is_sdcard_inserted(tmp_path, mocker):
     assert not metrics.is_sdcard_inserted()
     device.touch()
     assert metrics.is_sdcard_inserted()
+
+
+ROOT_DEV = 0xB302  # 179:2
+DATA_PARTITION_DEV = 0xB306  # 179:6
+
+
+def _patch_stat_dev(mocker, devs):
+    """
+    Make os.stat() return st_dev from devs by path, and raise FileNotFoundError for the other paths.
+    """
+
+    def stat(path):
+        if path not in devs:
+            raise FileNotFoundError(2, "No such file or directory", path)
+        return mocker.Mock(st_dev=devs[path])
+
+    mocker.patch("os.stat", side_effect=stat)
+
+
+@pytest.mark.parametrize(
+    "devs, separate",
+    [
+        ({"/": ROOT_DEV, "/mnt/data": DATA_PARTITION_DEV}, True),
+        # a plain folder and a bind mount of a root filesystem folder look the same: the root's st_dev
+        ({"/": ROOT_DEV, "/mnt/data": ROOT_DEV}, False),
+        ({"/": ROOT_DEV}, False),
+    ],
+    ids=["partition", "folder", "missing"],
+)
+def test_is_separate_filesystem(mocker, devs, separate):
+    _patch_stat_dev(mocker, devs)
+    assert metrics.is_separate_filesystem("/mnt/data") is separate
+
+
+DATA_DF = [4321, 9876]
+DATA_CONTROLS = list(metrics.Data.CONTROL_DEFINITIONS)
+
+
+class FakeDataLayout:  # pylint: disable=too-few-public-methods
+    """
+    Whether /mnt/data is a partition of its own, behind the helpers Data calls.
+    """
+
+    def __init__(self, mocker, separate):
+        mocker.patch.object(metrics, "is_separate_filesystem", return_value=separate)
+        self.get_df = mocker.patch.object(metrics, "get_df", return_value=DATA_DF)
+
+
+def test_data_partition_is_reported(mocker):
+    layout = FakeDataLayout(mocker, separate=True)
+    messenger = mocker.Mock()
+    metric = metrics.Data(messenger)
+
+    metric.create()
+    metric.send()
+
+    assert _created(messenger) == DATA_CONTROLS
+    assert [call.args for call in messenger.send_value.call_args_list] == [
+        ("data_total_space", DATA_DF[1]),
+        ("data_used_space", DATA_DF[0]),
+    ]
+    assert {call.args for call in layout.get_df.call_args_list} == {("/mnt/data",)}
+
+
+def test_data_folder_on_root_creates_nothing(mocker):
+    layout = FakeDataLayout(mocker, separate=False)
+    messenger = mocker.Mock()
+    metric = metrics.Data(messenger)
+
+    for _ in range(2):
+        metric.create()
+        metric.send()
+
+    assert not messenger.method_calls
+    # it would be the root filesystem's numbers, not the data's
+    layout.get_df.assert_not_called()
