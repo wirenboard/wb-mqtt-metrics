@@ -1,3 +1,10 @@
+wb-mqtt-metrics (0.8.0) stable; urgency=medium
+
+  * Add SdCard metric: sdcard_used_space, sdcard_total_space, sdcard_linked_on and sdcard_readonly
+    for the card mounted on /mnt/sdcard
+
+ -- Nikolay Korotkiy <nikolay.korotkiy@wirenboard.com>  Sat, 14 Nov 2026 23:30:00 +0400
+
 wb-mqtt-metrics (0.7.0) stable; urgency=medium
 
   * Wait for an unavailable MQTT broker instead of exiting, exit 2 on a rejected login
