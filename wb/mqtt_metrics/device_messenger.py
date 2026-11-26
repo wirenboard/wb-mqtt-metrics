@@ -66,5 +66,12 @@ class MqttMessenger:
         self._publish(f"/devices/{self.device_name}/controls/{metric_name}/meta", json.dumps(meta))
         self._track(f"/devices/{self.device_name}/controls/{metric_name}")
 
+    def remove_control(self, metric_name):
+        control_topic = f"/devices/{self.device_name}/controls/{metric_name}"
+        topics = [t for t in self.cleanup_topics if t == control_topic or t.startswith(control_topic + "/")]
+        for topic in topics:
+            self.client.publish(topic, None, retain=True, qos=1)
+            self.cleanup_topics.remove(topic)
+
     def send_value(self, metric_name, value):
         self._publish(f"/devices/{self.device_name}/controls/{metric_name}", value, cleanup=False)

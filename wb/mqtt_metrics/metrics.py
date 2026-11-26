@@ -11,6 +11,11 @@ MEMINFO_PATH = "/proc/meminfo"
 MOUNTINFO_PATH = "/proc/self/mountinfo"
 SYS_DEV_BLOCK_PATH = "/sys/dev/block"
 
+DATA_MOUNTPOINT = "/mnt/data"
+
+SDCARD_DEVICE = "/dev/mmcblk1p1"
+SDCARD_MOUNTPOINT = "/mnt/sdcard"
+
 
 def read_meminfo():
     meminfo = {}
@@ -47,14 +52,18 @@ def get_df(path):
     return [usage.used // MIB, usage.total // MIB]
 
 
-def get_dev_root_link():
-    devno = None
+def find_mount(mountpoint):
+    found = None
     with open(MOUNTINFO_PATH, encoding="utf-8") as mountinfo_file:
         for line in mountinfo_file:
             fields = line.split()
-            if len(fields) > 4 and fields[4] == "/":
-                devno = fields[2]
+            if len(fields) > 4 and fields[4] == mountpoint:
+                separator = fields.index("-", 6)
+                found = (fields[2], fields[separator + 1])
+    return found
 
+
+def get_block_device(devno):
     if devno is None:
         return "unknown"
 
@@ -62,6 +71,39 @@ def get_dev_root_link():
         return "/dev/" + os.path.basename(os.readlink(os.path.join(SYS_DEV_BLOCK_PATH, devno)))
     except OSError:
         return "unknown"
+
+
+def get_dev_root_link():
+    mount = find_mount("/")
+    return get_block_device(mount[0] if mount else None)
+
+
+def is_separate_filesystem(path):
+    try:
+        return os.stat(path).st_dev != os.stat("/").st_dev
+    except OSError:
+        return False
+
+
+def is_sdcard_inserted():
+    return os.path.exists(SDCARD_DEVICE)
+
+
+def get_sdcard_devno():
+    mount = find_mount(SDCARD_MOUNTPOINT)
+    if mount is None or mount[1] == "autofs":
+        return None
+    return mount[0]
+
+
+def get_sdcard_data(devno):
+    stat = os.statvfs(SDCARD_MOUNTPOINT)
+    return {
+        "sdcard_used_space": (stat.f_blocks - stat.f_bfree) * stat.f_frsize // MIB,
+        "sdcard_total_space": stat.f_blocks * stat.f_frsize // MIB,
+        "sdcard_linked_on": get_block_device(devno),
+        "sdcard_readonly": 1 if stat.f_flag & os.ST_RDONLY else 0,
+    }
 
 
 class Metric(metaclass=ABCMeta):
@@ -194,10 +236,79 @@ class Data(Metric):
         },
     }
 
+    def __init__(self, messenger: MqttMessenger):
+        super().__init__(messenger)
+        self._enabled = False
+
     def create(self):
+        self._enabled = is_separate_filesystem(DATA_MOUNTPOINT)
+        if not self._enabled:
+            return
+
         for metric_name, meta in self.CONTROL_DEFINITIONS.items():
             self._messenger.create_control(metric_name, meta)
-        self._messenger.send_value("data_total_space", get_df("/mnt/data")[1])
+        self._messenger.send_value("data_total_space", get_df(DATA_MOUNTPOINT)[1])
 
     def send(self):
-        self._messenger.send_value("data_used_space", get_df("/mnt/data")[0])
+        if self._enabled:
+            self._messenger.send_value("data_used_space", get_df(DATA_MOUNTPOINT)[0])
+
+
+class SdCard(Metric):
+    CONTROL_DEFINITIONS = {
+        "sdcard_used_space": {
+            "title": {"en": "SD card used space", "ru": "Используемое место на SD-карте"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "sdcard_total_space": {
+            "title": {"en": "SD card total space", "ru": "Общий размер SD-карты"},
+            "type": "value",
+            "units": "MiB",
+        },
+        "sdcard_linked_on": {
+            "title": {"en": "SD card linked on", "ru": "Устройство SD-карты"},
+            "type": "text",
+        },
+        "sdcard_readonly": {
+            "title": {"en": "SD card read-only", "ru": "SD-карта только для чтения"},
+            "type": "switch",
+        },
+    }
+
+    def __init__(self, messenger: MqttMessenger):
+        super().__init__(messenger)
+        self._controls_created = False
+
+    def create(self):
+        if self._controls_created:
+            self._create_controls()
+
+    def send(self):
+        data = self._read()
+        if data is None:
+            if self._controls_created:
+                for metric_name in self.CONTROL_DEFINITIONS:
+                    self._messenger.remove_control(metric_name)
+                self._controls_created = False
+            return
+
+        if not self._controls_created:
+            self._create_controls()
+        for metric_name, value in data.items():
+            self._messenger.send_value(metric_name, value)
+
+    def _create_controls(self):
+        for metric_name, meta in self.CONTROL_DEFINITIONS.items():
+            self._messenger.create_control(metric_name, meta)
+        self._controls_created = True
+
+    def _read(self):
+        devno = get_sdcard_devno() if is_sdcard_inserted() else None
+        if devno is None:
+            return None
+
+        try:
+            return get_sdcard_data(devno)
+        except OSError:
+            return None
