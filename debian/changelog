@@ -1,3 +1,11 @@
+wb-mqtt-metrics (0.8.2) stable; urgency=medium
+
+  * Switch the license to The WB License (MIT-WB): Wiren Board
+    as the copyright holder, 2021 as the first publication year, use restricted to Wiren Board equipment
+  * Fill debian/copyright in the DEP-5 format
+
+ -- Ekaterina Volkova <ekaterina.volkova@wirenboard.com>  Thu, 26 Nov 2026 18:14:12 +0300
+
 wb-mqtt-metrics (0.8.1) stable; urgency=medium
 
   * Data: create no controls when /mnt/data is a folder of the root filesystem instead of a partition
